@@ -200,3 +200,92 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 
 ---
 
+## 12. Development Progress (UPDATE REGULARLY)
+
+**Last Updated:** Feb 2026
+
+### Overall Progress: ~60% Complete
+
+### Completed Components
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Tech Stack | 95% | Fiber v2, GORM, Zap, Viper, Docker |
+| Domain Types | 80% | Building, Unit, Coordinates, Resources, Mission, Research types |
+| Formula Package | 85% | Production, cost, distance, ship stats with wiki verification |
+| Wiki Tests | 100% | All 10 phases complete (WIKI_TEST_ROADMAP.md) |
+| Auth Service | 80% | Register, login, token validation |
+| Building Service | 70% | Start/cancel building, queue management |
+| Production Service | 75% | Resource production calculation |
+| Research Service | 70% | Start/cancel research, tech tree |
+| Unit Service | 70% | Ship/defense building, queues |
+| Fleet Service | 40% | Basic fleet send, distance calc - needs mission types |
+| Repositories | 70% | User, planet, fleet, queues, tech |
+| Scheduler | 50% | Basic cron - needs fleet processing |
+| API Endpoints | 60% | ~25 endpoints, auth, rate limiting |
+| Rust Battle Engine | 50% | CGO binding compiles, battle integration incomplete |
+
+### Known Issues & Gaps
+
+| Issue | Severity | Status |
+|-------|----------|--------|
+| Test failures in `cost_test.go` | HIGH | Need to fix or remove outdated tests |
+| Missing DTOs | MEDIUM | `internal/dto/` is empty |
+| Missing custom middleware | MEDIUM | `internal/middleware/` is empty |
+| Incomplete fleet missions | MEDIUM | Only basic send - missing attack/transport/colonize/etc |
+| Battle integration | LOW | Rust compiled but not integrated with fleet service |
+| Test coverage | MEDIUM | 76.5% on formula/ - need 95%+ |
+| Agent compatibility | LOW | Phase 6 not started |
+
+### Repository Structure Status
+
+```
+ogamex-go/
+├── cmd/server/main.go           ✅ Complete
+├── internal/
+│   ├── domain/                 ✅ 6 files - building, unit, coordinates, resources, mission, research types
+│   ├── service/                ✅ 6 services - auth, building, fleet, production, research, unit
+│   ├── engine/                 ❌ Empty - rustbattle is in pkg/
+│   ├── repository/             ✅ 6 repos - user, planet, fleet, queues, tech, interfaces
+│   ├── scheduler/              ⚠️ Partial - basic cron, needs fleet processing
+│   ├── formula/                ✅ 16 files - production, cost, distance, ship_stats + wiki tests
+│   ├── api/                    ✅ handlers.go + errors.go
+│   ├── dto/                    ❌ Empty - needs DTOs
+│   ├── middleware/             ❌ Empty - needs custom middleware
+│   ├── logger/                 ✅ logger.go
+│   └── schema/                 ✅ models.go (GORM)
+├── pkg/rustbattle/             ✅ battle.go (CGO binding)
+├── tests/wiki/                 ✅ 8 JSON test data files
+├── config/                    ✅ config.yaml
+├── docker-compose.yml          ✅ PostgreSQL + app
+├── Dockerfile                 ✅ Multi-stage build
+└── AGENTS.md                  📝 This file
+```
+
+### Test Status
+
+```bash
+# Run wiki verification tests
+go test -v -run Wiki ./...
+
+# Run all tests
+go test ./...
+
+# Check coverage
+go test -cover ./internal/formula/...
+```
+
+### Next Steps (Priority Order)
+
+1. **FIX:** Test failures in `cost_test.go` (TestCalculatePositionBonus)
+2. **ADD:** DTOs for request/response structs
+3. **ADD:** Custom middleware for auth/rate-limit
+4. **COMPLETE:** Fleet mission types (attack, transport, colonize, etc.)
+5. **INTEGRATE:** Rust battle engine with fleet service
+6. **IMPROVE:** Test coverage to 95%+
+7. **ADD:** Redis caching for /api/status endpoint
+
+---
+
+*NOTE: Update this section as development progresses. Run `go test ./...` before each commit to ensure no regressions.*
+

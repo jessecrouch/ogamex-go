@@ -68,13 +68,22 @@ func TestCalculatePositionBonus(t *testing.T) {
 		position int
 		wantMetal, wantCrystal, wantDeuterium float64
 	}{
-		{"position 1", 1, 1.0, 1.0, 1.0},
-		{"position 4", 4, 1.0, 1.1, 1.0},
-		{"position 8", 8, 1.0, 1.2, 1.0},
-		{"position 9", 9, 1.0, 1.3, 1.0},
-		{"position 10", 10, 1.0, 1.4, 1.0},
-		{"position 11", 11, 1.0, 1.6, 1.0},
-		{"position 12", 12, 1.0, 1.7, 1.0},
+		// Crystal bonus positions (1-3)
+		{"position 1", 1, 1.0, 1.4, 1.0},
+		{"position 2", 2, 1.0, 1.3, 1.0},
+		{"position 3", 3, 1.0, 1.2, 1.0},
+		// No bonus positions (4-5)
+		{"position 4", 4, 1.0, 1.0, 1.0},
+		{"position 5", 5, 1.0, 1.0, 1.0},
+		// Metal bonus positions (6-10)
+		{"position 6", 6, 1.17, 1.0, 1.0},
+		{"position 7", 7, 1.23, 1.0, 1.0},
+		{"position 8", 8, 1.35, 1.0, 1.0},
+		{"position 9", 9, 1.23, 1.0, 1.0},
+		{"position 10", 10, 1.17, 1.0, 1.0},
+		// No bonus positions (11+)
+		{"position 11", 11, 1.0, 1.0, 1.0},
+		{"position 12", 12, 1.0, 1.0, 1.0},
 		{"position 15", 15, 1.0, 1.0, 1.0},
 	}
 

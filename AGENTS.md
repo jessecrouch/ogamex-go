@@ -219,21 +219,21 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 | Production Service | 75% | Resource production calculation |
 | Research Service | 70% | Start/cancel research, tech tree |
 | Unit Service | 70% | Ship/defense building, queues |
-| Fleet Service | 40% | Basic fleet send, distance calc - needs mission types |
+| Fleet Service | 75% | Most missions implemented, battle uses Go not Rust |
 | Repositories | 70% | User, planet, fleet, queues, tech |
-| Scheduler | 50% | Basic cron - needs fleet processing |
+| Scheduler | 80% | Building, research, unit, fleet, production processing |
 | API Endpoints | 60% | ~25 endpoints, auth, rate limiting |
-| Rust Battle Engine | 50% | CGO binding compiles, battle integration incomplete |
+| Rust Battle Engine | 30% | CGO binding compiles, NOT integrated - uses Go battle |
 
 ### Known Issues & Gaps
 
 | Issue | Severity | Status |
 |-------|----------|--------|
 | Test failures in `cost_test.go` | HIGH | FIXED |
-| Missing DTOs | MEDIUM | DONE - added dto.go |
-| Missing custom middleware | MEDIUM | DONE - added auth.go |
-| Incomplete fleet missions | MEDIUM | Only basic send - missing attack/transport/colonize/etc |
-| Battle integration | LOW | Rust compiled but not integrated with fleet service |
+| Missing DTOs | MEDIUM | FIXED |
+| Missing custom middleware | MEDIUM | FIXED |
+| Fleet missions | MEDIUM | MOSTLY DONE - attack/transport/colonize/recycle/expedition implemented |
+| Rust battle integration | HIGH | NOT INTEGRATED - uses Go-based battle simulation |
 | Test coverage | MEDIUM | 76.5% on formula/ - need 95%+ |
 | Agent compatibility | LOW | Phase 6 not started |
 

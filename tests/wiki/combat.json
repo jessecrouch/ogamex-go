@@ -1,0 +1,80 @@
+{
+  "description": "Combat mechanics verification data based on OGame wiki",
+  "shield_absorption": {
+    "description": "Shield absorbs up to X% of incoming damage per round, max equal to shield points",
+    "max_shield_absorption": 0.7,
+    "example": {
+      "shield_points": 1000,
+      "incoming_damage": 500,
+      "absorbed": 500,
+      "remaining_damage": 0
+    }
+  },
+  "weapon_damage": {
+    "description": "Weapon damage is randomly distributed: 70%-130% of base damage",
+    "min_multiplier": 0.7,
+    "max_multiplier": 1.3
+  },
+  "defense_rebuild": {
+    "description": "Defense structures have 70% chance to rebuild after battle",
+    "rebuild_chance": 0.7
+  },
+  "debris_field": {
+    "description": "Debris field contains 30% of destroyed ship value",
+    "metal_percentage": 0.3,
+    "crystal_percentage": 0.3,
+    "example": {
+      "destroyed_value": 10000,
+      "debris_metal": 3000,
+      "debris_crystal": 3000
+    }
+  },
+  "moon_chance": {
+    "description": "Moon generation chance based on debris field",
+    "base_chance": 0.02,
+    "per_100k_debris": 0.01,
+    "max_chance": 0.2
+  },
+  "battle_scenarios": [
+    {
+      "name": "Light Fighter vs Light Fighter",
+      "attacker": {
+        "units": {
+          "301": {"amount": 10, "attack": 50, "shield": 10, "hull": 4000}
+        }
+      },
+      "defender": {
+        "units": {
+          "301": {"amount": 10, "attack": 50, "shield": 10, "hull": 4000}
+        }
+      },
+      "expected_rounds": "1-6"
+    },
+    {
+      "name": "Battleship vs Defense",
+      "attacker": {
+        "units": {
+          "405": {"amount": 1, "attack": 1000, "shield": 200, "hull": 60000}
+        }
+      },
+      "defender": {
+        "units": {
+          "401": {"amount": 10, "attack": 80, "shield": 20, "hull": 2000}
+        }
+      }
+    },
+    {
+      "name": "Deathstar vs Fleet",
+      "attacker": {
+        "units": {
+          "2147483647": {"amount": 1, "attack": 200000, "shield": 200000, "hull": 15000000}
+        }
+      },
+      "defender": {
+        "units": {
+          "301": {"amount": 100, "attack": 50, "shield": 10, "hull": 4000}
+        }
+      }
+    }
+  ]
+}

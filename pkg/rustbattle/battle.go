@@ -7,7 +7,7 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -L./storage/rust-libs -lbattle_engine_ffi
+#cgo LDFLAGS: -L/home/bolt/Documents/ogamex-go/storage/rust-libs -lbattle_engine_ffi
 #include <stdlib.h>
 #include <string.h>
 

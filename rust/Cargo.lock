@@ -3,16 +3,6 @@
 version = 4
 
 [[package]]
-name = "battle_engine_debug"
-version = "0.1.0"
-dependencies = [
- "battle_engine_ffi",
- "libc",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "battle_engine_ffi"
 version = "0.1.0"
 dependencies = [
@@ -178,10 +168,6 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
-
-[[package]]
-name = "test_ffi"
-version = "0.1.0"
 
 [[package]]
 name = "unicode-ident"

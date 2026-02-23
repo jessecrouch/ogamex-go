@@ -46,7 +46,7 @@ func (r *fleetMissionRepository) GetByUserID(ctx context.Context, userID uint) (
 
 func (r *fleetMissionRepository) GetActive(ctx context.Context) ([]*schema.FleetMission, error) {
 	var missions []*schema.FleetMission
-	err := r.db.WithContext(ctx).Where("status IN ?", []int{1, 2}).Find(&missions).Error
+	err := r.db.WithContext(ctx).Where("status = ?", 0).Find(&missions).Error
 	return missions, err
 }
 

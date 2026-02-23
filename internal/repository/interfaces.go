@@ -21,6 +21,7 @@ type PlanetRepository interface {
 	Create(ctx context.Context, planet *schema.Planet) error
 	GetByID(ctx context.Context, id uint) (*schema.Planet, error)
 	GetByCoords(ctx context.Context, userID uint, galaxy, system, position int) (*schema.Planet, error)
+	GetByCoordsAny(ctx context.Context, galaxy, system, position int) (*schema.Planet, error)
 	GetByUserID(ctx context.Context, userID uint) ([]*schema.Planet, error)
 	GetAll(ctx context.Context) ([]*schema.Planet, error)
 	Update(ctx context.Context, planet *schema.Planet) error
@@ -73,6 +74,7 @@ type UnitQueueRepository interface {
 	GetByID(ctx context.Context, id uint) (*schema.UnitQueue, error)
 	GetByPlanetID(ctx context.Context, planetID uint) ([]*schema.UnitQueue, error)
 	GetCurrent(ctx context.Context, planetID uint) (*schema.UnitQueue, error)
+	GetAllWithActive(ctx context.Context) ([]*schema.UnitQueue, error)
 	Update(ctx context.Context, queue *schema.UnitQueue) error
 	Delete(ctx context.Context, id uint) error
 }

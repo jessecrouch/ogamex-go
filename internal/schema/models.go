@@ -107,6 +107,16 @@ type Planet struct {
 	Reaper           int            `json:"reaper"`
 	Pathfinder       int            `json:"pathfinder"`
 
+	RocketLauncher   int            `json:"rocket_launcher"`
+	LightLaser      int            `json:"light_laser"`
+	HeavyLaser      int            `json:"heavy_laser"`
+	IonCannon       int            `json:"ion_cannon"`
+	GaussCannon     int            `json:"gauss_cannon"`
+	PlasmaTurret    int            `json:"plasma_turret"`
+	ShieldDome      int            `json:"shield_dome"`
+	MissileInterceptor int         `json:"missile_interceptor"`
+	MissileLauncher int            `json:"missile_launcher"`
+
 	RapidfireFrom   string         `json:"rapidfire_from"`
 	RapidfireTo     string         `json:"rapidfire_to"`
 }
@@ -161,6 +171,7 @@ type FleetMission struct {
 	Deuterium        int64          `json:"deuterium"`
 	Status           int            `gorm:"default:0" json:"status"`
 	ACSId            *uint          `json:"acs_id"`
+	Ships            string         `gorm:"type:text" json:"ships"`
 }
 
 func (FleetMission) TableName() string {

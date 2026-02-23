@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
@@ -15,14 +16,18 @@ import (
 
 	"ogamex-go/internal/api"
 	"ogamex-go/internal/database"
+	appLogger "ogamex-go/internal/logger"
 	"ogamex-go/internal/repository"
 	"ogamex-go/internal/scheduler"
 	"ogamex-go/internal/service"
 )
 
 func main() {
+	production := viper.GetString("ENV") == "production"
+	appLogger.Init(production)
+
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		appLogger.Warn().Msg("No .env file found")
 	}
 
 	viper.SetConfigName("config")
@@ -32,7 +37,7 @@ func main() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Printf("Warning: No config file found: %v", err)
+		appLogger.Warn().Err(err).Msg("No config file found, using defaults")
 	}
 
 	dbHost := viper.GetString("database.host")
@@ -43,19 +48,22 @@ func main() {
 
 	db, err := database.NewDatabase(dbHost, dbPort, dbUser, dbPassword, dbName)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		appLogger.Error().Err(err).Msg("Failed to connect to database")
+		os.Exit(1)
 	}
 
 	if err := db.AutoMigrate(); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
+		appLogger.Error().Err(err).Msg("Failed to migrate database")
+		os.Exit(1)
 	}
-	log.Println("Database connected and migrated")
+	appLogger.Info().Msg("Database connected and migrated")
 
 	userRepo := repository.NewUserRepository(db)
 	planetRepo := repository.NewPlanetRepository(db)
 	techRepo := repository.NewUserTechRepository(db)
 	buildingQueueRepo := repository.NewBuildingQueueRepository(db)
 	researchQueueRepo := repository.NewResearchQueueRepository(db)
+	unitQueueRepo := repository.NewUnitQueueRepository(db)
 	fleetMissionRepo := repository.NewFleetMissionRepository(db)
 
 	buildingService := service.NewBuildingService(planetRepo, buildingQueueRepo, techRepo)
@@ -73,11 +81,12 @@ func main() {
 	}
 	productionService := service.NewProductionService(planetRepo, techRepo, economySpeed)
 	authService := service.NewAuthService(userRepo, planetRepo)
+	unitService := service.NewUnitService(planetRepo, unitQueueRepo, techRepo)
 
-	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, planetRepo, buildingQueueRepo, researchQueueRepo)
+	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, unitService, planetRepo, buildingQueueRepo, researchQueueRepo, unitQueueRepo)
 	sched.Start()
 
-	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService)
+	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService)
 
 	app := fiber.New(fiber.Config{
 		AppName: "ogamex-go",
@@ -86,8 +95,40 @@ func main() {
 	app.Use(recover.New())
 	app.Use(logger.New())
 
+	rateLimit := limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			if c.Locals("user_id") != nil {
+				return fmt.Sprintf("user:%d", c.Locals("user_id"))
+			}
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(429).JSON(fiber.Map{
+				"error": "rate limit exceeded",
+				"retry_after": 60,
+			})
+		},
+	})
+
+	app.Use(rateLimit)
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
+	})
+
+	app.Get("/health/ready", func(c *fiber.Ctx) error {
+		if err := db.Ping(); err != nil {
+			return c.Status(503).JSON(fiber.Map{
+				"status": "unhealthy",
+				"database": "disconnected",
+			})
+		}
+		return c.JSON(fiber.Map{
+			"status":   "healthy",
+			"database": "connected",
+		})
 	})
 
 	handlers.SetupRoutes(app)
@@ -99,9 +140,9 @@ func main() {
 
 	go func() {
 		addr := fmt.Sprintf(":%s", port)
-		log.Printf("Starting ogamex-go on %s", addr)
+		appLogger.Info().Str("address", addr).Msg("Starting ogamex-go server")
 		if err := app.Listen(addr); err != nil {
-			log.Fatalf("Failed to start server: %v", err)
+			appLogger.Fatal().Err(err).Msg("Failed to start server")
 		}
 	}()
 
@@ -109,12 +150,12 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down...")
+	appLogger.Info().Msg("Shutting down...")
 	sched.Stop()
 
 	if err := db.Close(); err != nil {
-		log.Printf("Error closing database: %v", err)
+		appLogger.Error().Err(err).Msg("Error closing database")
 	}
 
-	log.Println("Server stopped")
+	appLogger.Info().Msg("Server stopped")
 }

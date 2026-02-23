@@ -3,13 +3,13 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormLogger "gorm.io/gorm/logger"
 
+	appLogger "ogamex-go/internal/logger"
 	"ogamex-go/internal/schema"
 )
 
@@ -22,7 +22,7 @@ func NewDatabase(host string, port int, user, password, dbname string) (*Databas
 		host, port, user, password, dbname)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: gormLogger.Default.LogMode(gormLogger.Info),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
@@ -41,7 +41,7 @@ func NewDatabase(host string, port int, user, password, dbname string) (*Databas
 }
 
 func (d *Database) AutoMigrate() error {
-	log.Println("Running auto-migration...")
+	appLogger.Info().Msg("Running auto-migration...")
 	return d.DB.AutoMigrate(
 		&schema.User{},
 		&schema.Planet{},
@@ -61,10 +61,18 @@ func (d *Database) Close() error {
 	return sqlDB.Close()
 }
 
+func (d *Database) Ping() error {
+	sqlDB, err := d.DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Ping()
+}
+
 func (d *Database) Begin(ctx context.Context) *gorm.DB {
 	tx := d.DB.WithContext(ctx).Begin()
 	if tx.Error != nil {
-		log.Printf("Warning: failed to begin transaction: %v", tx.Error)
+		appLogger.Warn().Err(tx.Error).Msg("Failed to begin transaction")
 	}
 	return tx
 }

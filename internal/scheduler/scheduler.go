@@ -17,9 +17,11 @@ type Scheduler struct {
 	researchService    *service.ResearchService
 	fleetService       *service.FleetService
 	productionService  *service.ProductionService
+	unitService        *service.UnitService
 	planetRepo        repository.PlanetRepository
 	buildingQueueRepo repository.BuildingQueueRepository
 	researchQueueRepo repository.ResearchQueueRepository
+	unitQueueRepo     repository.UnitQueueRepository
 }
 
 func NewScheduler(
@@ -27,9 +29,11 @@ func NewScheduler(
 	researchService *service.ResearchService,
 	fleetService *service.FleetService,
 	productionService *service.ProductionService,
+	unitService *service.UnitService,
 	planetRepo repository.PlanetRepository,
 	buildingQueueRepo repository.BuildingQueueRepository,
 	researchQueueRepo repository.ResearchQueueRepository,
+	unitQueueRepo repository.UnitQueueRepository,
 ) *Scheduler {
 	return &Scheduler{
 		cron:                cron.New(),
@@ -37,9 +41,11 @@ func NewScheduler(
 		researchService:     researchService,
 		fleetService:        fleetService,
 		productionService:   productionService,
+		unitService:         unitService,
 		planetRepo:         planetRepo,
 		buildingQueueRepo:   buildingQueueRepo,
 		researchQueueRepo:   researchQueueRepo,
+		unitQueueRepo:       unitQueueRepo,
 	}
 }
 
@@ -63,6 +69,7 @@ func (s *Scheduler) processQueues() {
 	
 	s.processBuildingQueues(ctx)
 	s.processResearchQueues(ctx)
+	s.processUnitQueues(ctx)
 }
 
 func (s *Scheduler) processBuildingQueues(ctx context.Context) {
@@ -128,5 +135,28 @@ func (s *Scheduler) updateProduction() {
 		log.Error().Err(err).Msg("Error updating production")
 	} else {
 		log.Debug().Msg("Production updated for all planets")
+	}
+}
+
+func (s *Scheduler) processUnitQueues(ctx context.Context) {
+	log.Debug().Msg("Processing unit queues")
+	
+	queues, err := s.unitQueueRepo.GetAllWithActive(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get unit queues")
+		return
+	}
+	
+	for _, queue := range queues {
+		if time.Now().Before(queue.EndTime) {
+			continue
+		}
+		
+		err = s.unitService.CompleteUnit(ctx, queue.ID)
+		if err != nil {
+			log.Debug().Err(err).Uint("queue_id", queue.ID).Msg("Failed to complete unit")
+		} else {
+			log.Info().Uint("planet_id", queue.PlanetID).Int("unit_id", queue.UnitID).Int("amount", queue.Amount).Msg("Unit construction completed")
+		}
 	}
 }

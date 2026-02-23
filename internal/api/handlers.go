@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -18,6 +19,7 @@ type Handlers struct {
 	fleetService    *service.FleetService
 	planetRepo      repository.PlanetRepository
 	authService     *service.AuthService
+	unitService     *service.UnitService
 }
 
 func NewHandlers(
@@ -26,6 +28,7 @@ func NewHandlers(
 	fleetService *service.FleetService,
 	planetRepo repository.PlanetRepository,
 	authService *service.AuthService,
+	unitService *service.UnitService,
 ) *Handlers {
 	return &Handlers{
 		buildingService: buildingService,
@@ -33,6 +36,7 @@ func NewHandlers(
 		fleetService:    fleetService,
 		planetRepo:      planetRepo,
 		authService:     authService,
+		unitService:     unitService,
 	}
 }
 
@@ -47,6 +51,7 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected := api.Group("", h.authMiddleware)
 
 	protected.Get("/user", h.GetUser)
+	protected.Get("/user/stats", h.GetUserStats)
 	protected.Get("/planets", h.GetUserPlanets)
 	protected.Get("/planets/:id", h.GetPlanet)
 	protected.Get("/planets/:id/resources", h.GetPlanetResources)
@@ -61,6 +66,13 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 
 	protected.Post("/fleets/send", h.SendFleet)
 	protected.Get("/fleets", h.GetFleets)
+
+	protected.Post("/planets/:id/units/build", h.BuildUnit)
+	protected.Get("/planets/:id/units/queue", h.GetUnitQueue)
+	protected.Delete("/units/queue/:id", h.CancelUnit)
+	protected.Get("/units/available", h.GetAvailableUnits)
+	protected.Get("/planets/:id/units", h.GetPlanetShips)
+	protected.Get("/planets/:id/defense", h.GetPlanetDefense)
 }
 
 func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
@@ -93,10 +105,11 @@ func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
 
 func (h *Handlers) GetStatus(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
-		"online":   true,
-		"version": "0.0.1",
-		"players":  0,
-		"universe": "ogamex-go",
+		"online":    true,
+		"version":   "0.0.1",
+		"universe":  "ogamex-go",
+		"api_base":  "/api/v1",
+		"time":      time.Now().Unix(),
 	})
 }
 
@@ -116,6 +129,39 @@ func (h *Handlers) GetUser(c *fiber.Ctx) error {
 		"dark_matter":    u.DarkMatter,
 		"character_class": u.CharacterClass,
 		"current_planet": u.CurrentPlanetID,
+	})
+}
+
+func (h *Handlers) GetUserStats(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	planets, err := h.planetRepo.GetByUserID(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	totalMetal := int64(0)
+	totalCrystal := int64(0)
+	totalDeuterium := int64(0)
+	planetCount := len(planets)
+
+	for _, p := range planets {
+		totalMetal += p.Metal
+		totalCrystal += p.Crystal
+		totalDeuterium += p.Deuterium
+	}
+
+	return c.JSON(fiber.Map{
+		"user_id":           userID,
+		"planets":           planetCount,
+		"total_resources": fiber.Map{
+			"metal":      totalMetal,
+			"crystal":    totalCrystal,
+			"deuterium":  totalDeuterium,
+		},
 	})
 }
 
@@ -597,5 +643,216 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 		"user_id":   user.ID,
 		"auth_token": user.AuthToken,
 		"username":  user.Username,
+	})
+}
+
+type BuildUnitRequest struct {
+	UnitID int `json:"unit_id"`
+	Amount int `json:"amount"`
+}
+
+func (h *Handlers) BuildUnit(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	if planet.UserID != userID {
+		return c.Status(403).JSON(fiber.Map{"error": "planet does not belong to user"})
+	}
+
+	var req BuildUnitRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	if req.UnitID == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "unit_id is required"})
+	}
+
+	if req.Amount <= 0 {
+		req.Amount = 1
+	}
+
+	err = h.unitService.BuildUnit(c.Context(), uint(planetID), req.UnitID, req.Amount)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":  true,
+		"planet_id": planetID,
+		"unit_id":  req.UnitID,
+		"amount":   req.Amount,
+	})
+}
+
+func (h *Handlers) GetUnitQueue(c *fiber.Ctx) error {
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	queue, err := h.unitService.GetQueue(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	type UnitQueueItem struct {
+		ID        uint   `json:"id"`
+		UnitID    int    `json:"unit_id"`
+		Amount    int    `json:"amount"`
+		StartTime int64  `json:"start_time"`
+		EndTime   int64  `json:"end_time"`
+	}
+
+	items := make([]UnitQueueItem, len(queue))
+	for i, q := range queue {
+		items[i] = UnitQueueItem{
+			ID:        q.ID,
+			UnitID:    q.UnitID,
+			Amount:    q.Amount,
+			StartTime: q.StartTime.Unix(),
+			EndTime:   q.EndTime.Unix(),
+		}
+	}
+
+	return c.JSON(fiber.Map{
+		"planet_id": planetID,
+		"queue":     items,
+	})
+}
+
+func (h *Handlers) CancelUnit(c *fiber.Ctx) error {
+	queueID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid queue id"})
+	}
+
+	err = h.unitService.CancelQueue(c.Context(), uint(queueID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":  true,
+		"queue_id": queueID,
+	})
+}
+
+func (h *Handlers) GetAvailableUnits(c *fiber.Ctx) error {
+	type UnitInfo struct {
+		ID          int    `json:"id"`
+		Name        string `json:"name"`
+		Metal       int64  `json:"metal"`
+		Crystal     int64  `json:"crystal"`
+		Deuterium   int64  `json:"deuterium"`
+		BuildTime   int64  `json:"build_time_seconds"`
+		Category    string `json:"category"`
+	}
+
+	units := []UnitInfo{
+		{202, "Small Cargo", 2000, 2000, 0, 5, "ship"},
+		{203, "Large Cargo", 6000, 6000, 0, 8, "ship"},
+		{204, "Light Fighter", 10000, 6000, 2000, 20, "ship"},
+		{205, "Heavy Fighter", 25000, 15000, 5000, 40, "ship"},
+		{206, "Cruiser", 10000, 20000, 10000, 10, "ship"},
+		{207, "Battleship", 50000, 25000, 15000, 80, "ship"},
+		{208, "Colony Ship", 10000, 10000, 0, 50, "ship"},
+		{209, "Recycler", 10000, 6000, 2000, 15, "ship"},
+		{210, "Espionage Probe", 0, 1000, 0, 30, "ship"},
+		{211, "Bomber", 50000, 50000, 25000, 200, "ship"},
+		{212, "Solar Satellite", 0, 2000, 500, 3, "ship"},
+		{213, "Destroyer", 10000, 10000, 0, 30, "ship"},
+		{214, "Deathstar", 100000, 100000, 50000, 400, "ship"},
+		{215, "Battlecruiser", 3000, 1000, 0, 4, "ship"},
+		{217, "Crawler", 2000, 2000, 1000, 10, "ship"},
+		{218, "Reaper", 8000, 0, 0, 20, "ship"},
+		{219, "Pathfinder", 20000, 10000, 10000, 75, "ship"},
+		{401, "Rocket Launcher", 2000, 0, 0, 10, "defense"},
+		{402, "Light Laser", 1500, 500, 0, 11, "defense"},
+		{403, "Heavy Laser", 6000, 2000, 0, 22, "defense"},
+		{404, "Ion Cannon", 2000, 6000, 0, 16, "defense"},
+		{405, "Gauss Cannon", 20000, 15000, 2000, 45, "defense"},
+		{406, "Plasma Turret", 50000, 50000, 30000, 90, "defense"},
+		{407, "Shield Dome", 10000, 10000, 0, 20, "defense"},
+		{408, "Missile Interceptor", 8000, 2000, 0, 15, "defense"},
+		{409, "Missile Launcher", 15000, 5000, 0, 20, "defense"},
+	}
+
+	return c.JSON(fiber.Map{
+		"units": units,
+	})
+}
+
+func (h *Handlers) GetPlanetShips(c *fiber.Ctx) error {
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	return c.JSON(fiber.Map{
+		"planet_id": planet.ID,
+		"ships": fiber.Map{
+			"small_cargo":       planet.SmallCargo,
+			"large_cargo":       planet.LargeCargo,
+			"light_fighter":    planet.LightFighter,
+			"heavy_fighter":    planet.HeavyFighter,
+			"cruiser":          planet.Cruiser,
+			"battleship":       planet.Battleship,
+			"colony_ship":      planet.ColonyShip,
+			"recycler":         planet.Recycler,
+			"espionage_probe":  planet.EspionageProbe,
+			"bomber":           planet.Bomber,
+			"destroyer":        planet.Destroyer,
+			"deathstar":        planet.Deathstar,
+			"battlecruiser":    planet.Battlecruiser,
+			"reaper":           planet.Reaper,
+			"pathfinder":       planet.Pathfinder,
+			"solar_satellite":  planet.SolarSatellite,
+			"crawler":          planet.Crawler,
+		},
+	})
+}
+
+func (h *Handlers) GetPlanetDefense(c *fiber.Ctx) error {
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	return c.JSON(fiber.Map{
+		"planet_id": planet.ID,
+		"defense": fiber.Map{
+			"rocket_launcher":      planet.RocketLauncher,
+			"light_laser":         planet.LightLaser,
+			"heavy_laser":         planet.HeavyLaser,
+			"ion_cannon":          planet.IonCannon,
+			"gauss_cannon":        planet.GaussCannon,
+			"plasma_turret":       planet.PlasmaTurret,
+			"shield_dome":         planet.ShieldDome,
+			"missile_interceptor": planet.MissileInterceptor,
+			"missile_launcher":    planet.MissileLauncher,
+		},
 	})
 }

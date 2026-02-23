@@ -51,8 +51,28 @@ var shipyardUnits = map[int]struct {
 	219: {20000, 10000, 10000, 75 * time.Second}, // Pathfinder
 }
 
+var defenseUnits = map[int]struct {
+	Metal     int64
+	Crystal   int64
+	Deuterium int64
+	BuildTime time.Duration
+}{
+	401: {2000, 0, 0, 10 * time.Second},      // Rocket Launcher
+	402: {1500, 500, 0, 11 * time.Second},    // Light Laser
+	403: {6000, 2000, 0, 22 * time.Second},   // Heavy Laser
+	404: {2000, 6000, 0, 16 * time.Second},   // Ion Cannon
+	405: {20000, 15000, 2000, 45 * time.Second}, // Gauss Cannon
+	406: {50000, 50000, 30000, 90 * time.Second}, // Plasma Turret
+	407: {10000, 10000, 0, 20 * time.Second}, // Shield Dome (Large Shield)
+	408: {8000, 2000, 0, 15 * time.Second},  // Missile Interceptor
+	409: {15000, 5000, 0, 20 * time.Second},  // Missile Launcher
+}
+
 func (s *UnitService) GetUnitCost(unitID int) (metal, crystal, deuterium int64, buildTime time.Duration) {
 	if unit, ok := shipyardUnits[unitID]; ok {
+		return unit.Metal, unit.Crystal, unit.Deuterium, unit.BuildTime
+	}
+	if unit, ok := defenseUnits[unitID]; ok {
 		return unit.Metal, unit.Crystal, unit.Deuterium, unit.BuildTime
 	}
 	return 0, 0, 0, 0
@@ -174,6 +194,24 @@ func (s *UnitService) CompleteUnit(ctx context.Context, queueID uint) error {
 		planet.Reaper += queue.Amount
 	case 219:
 		planet.Pathfinder += queue.Amount
+	case 401:
+		planet.RocketLauncher += queue.Amount
+	case 402:
+		planet.LightLaser += queue.Amount
+	case 403:
+		planet.HeavyLaser += queue.Amount
+	case 404:
+		planet.IonCannon += queue.Amount
+	case 405:
+		planet.GaussCannon += queue.Amount
+	case 406:
+		planet.PlasmaTurret += queue.Amount
+	case 407:
+		planet.ShieldDome += queue.Amount
+	case 408:
+		planet.MissileInterceptor += queue.Amount
+	case 409:
+		planet.MissileLauncher += queue.Amount
 	}
 
 	err = s.planetRepo.Update(ctx, planet)
@@ -200,6 +238,20 @@ func (s *UnitService) CancelQueue(ctx context.Context, queueID uint) error {
 	_ = s.planetRepo.AddResources(ctx, queue.PlanetID, metal*refund/2, crystal*refund/2, deuterium*refund/2)
 
 	return s.unitQueueRepo.Delete(ctx, queueID)
+}
+
+func (s *UnitService) IsShipUnit(unitID int) bool {
+	_, ok := shipyardUnits[unitID]
+	return ok
+}
+
+func (s *UnitService) IsDefenseUnit(unitID int) bool {
+	_, ok := defenseUnits[unitID]
+	return ok
+}
+
+func (s *UnitService) IsValidUnit(unitID int) bool {
+	return s.IsShipUnit(unitID) || s.IsDefenseUnit(unitID)
 }
 
 var (

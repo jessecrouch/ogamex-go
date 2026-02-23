@@ -207,3 +207,12 @@ func (r *unitQueueRepository) Update(ctx context.Context, queue *schema.UnitQueu
 func (r *unitQueueRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&schema.UnitQueue{}, id).Error
 }
+
+func (r *unitQueueRepository) GetAllWithActive(ctx context.Context) ([]*schema.UnitQueue, error) {
+	var queues []*schema.UnitQueue
+	err := r.db.WithContext(ctx).
+		Where("end_time > ?", time.Now()).
+		Order("start_time ASC").
+		Find(&queues).Error
+	return queues, err
+}

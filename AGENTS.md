@@ -195,7 +195,7 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 - [ ] All logs structured + include trace_id
 - [ ] Rust battle integration tested with 1M-unit fleets
 - [x] Matches OGameX behavior on 10+ known test cases (wiki + OGameX tests)
-- [ ] Docker image < 60 MB
+- [x] Docker image < 60 MB
 - [ ] Agents can play full game using only this API (no web UI needed)
 
 ---

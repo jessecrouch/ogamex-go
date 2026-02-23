@@ -14,13 +14,15 @@ import (
 )
 
 type Handlers struct {
-	buildingService  *service.BuildingService
-	researchService  *service.ResearchService
-	fleetService     *service.FleetService
-	planetRepo       repository.PlanetRepository
-	authService      *service.AuthService
-	unitService      *service.UnitService
+	buildingService   *service.BuildingService
+	researchService   *service.ResearchService
+	fleetService      *service.FleetService
+	planetRepo        repository.PlanetRepository
+	authService       *service.AuthService
+	unitService       *service.UnitService
 	productionService *service.ProductionService
+	messageService    *service.MessageService
+	planetService     *service.PlanetService
 }
 
 func NewHandlers(
@@ -31,15 +33,19 @@ func NewHandlers(
 	authService *service.AuthService,
 	unitService *service.UnitService,
 	productionService *service.ProductionService,
+	messageService *service.MessageService,
+	planetService *service.PlanetService,
 ) *Handlers {
 	return &Handlers{
-		buildingService:  buildingService,
-		researchService:  researchService,
-		fleetService:     fleetService,
-		planetRepo:       planetRepo,
-		authService:      authService,
-		unitService:      unitService,
+		buildingService:   buildingService,
+		researchService:   researchService,
+		fleetService:      fleetService,
+		planetRepo:        planetRepo,
+		authService:       authService,
+		unitService:       unitService,
 		productionService: productionService,
+		messageService:    messageService,
+		planetService:     planetService,
 	}
 }
 
@@ -79,6 +85,13 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Get("/planets/:id/units", h.GetPlanetShips)
 	protected.Get("/planets/:id/defense", h.GetPlanetDefense)
 	protected.Get("/planets/:id/production", h.GetPlanetProduction)
+
+	protected.Get("/messages", h.GetMessages)
+	protected.Get("/messages/unread", h.GetUnreadCount)
+	protected.Post("/messages/:id/read", h.MarkMessageRead)
+	protected.Delete("/messages/:id", h.DeleteMessage)
+
+	protected.Get("/galaxy/:galaxy/:system", h.GetGalaxy)
 }
 
 func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
@@ -936,5 +949,101 @@ func (h *Handlers) GetPlanetProduction(c *fiber.Ctx) error {
 		"consumption": fiber.Map{
 			"energy": planet.EnergyUsed,
 		},
+	})
+}
+
+func (h *Handlers) GetMessages(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	offset, _ := strconv.Atoi(c.Query("offset", "0"))
+
+	messages, err := h.messageService.GetMessages(c.Context(), userID, limit, offset)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"messages": messages,
+		"limit":    limit,
+		"offset":   offset,
+	})
+}
+
+func (h *Handlers) GetUnreadCount(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	count, err := h.messageService.GetUnreadCount(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"unread_count": count,
+	})
+}
+
+func (h *Handlers) MarkMessageRead(c *fiber.Ctx) error {
+	messageID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid message id"})
+	}
+
+	err = h.messageService.MarkAsRead(c.Context(), uint(messageID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) DeleteMessage(c *fiber.Ctx) error {
+	messageID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid message id"})
+	}
+
+	err = h.messageService.DeleteMessage(c.Context(), uint(messageID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetGalaxy(c *fiber.Ctx) error {
+	galaxy, err := c.ParamsInt("galaxy")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+
+	system, err := c.ParamsInt("system")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+
+	if galaxy < 1 || galaxy > 10 {
+		return c.Status(400).JSON(fiber.Map{"error": "galaxy must be between 1 and 10"})
+	}
+
+	if system < 1 || system > 499 {
+		return c.Status(400).JSON(fiber.Map{"error": "system must be between 1 and 499"})
+	}
+
+	positions, err := h.planetService.GetGalaxy(c.Context(), galaxy, system)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"galaxy":   galaxy,
+		"system":   system,
+		"positions": positions,
 	})
 }

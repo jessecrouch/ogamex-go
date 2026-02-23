@@ -83,11 +83,14 @@ func main() {
 	productionService := service.NewProductionService(planetRepo, techRepo, economySpeed)
 	authService := service.NewAuthService(userRepo, planetRepo)
 	unitService := service.NewUnitService(planetRepo, unitQueueRepo, techRepo)
+	messageRepo := repository.NewMessageRepository(db)
+	messageService := service.NewMessageService(messageRepo, userRepo)
+	planetService := service.NewPlanetService(planetRepo)
 
 	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, unitService, planetRepo, buildingQueueRepo, researchQueueRepo, unitQueueRepo)
 	sched.Start()
 
-	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService)
+	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService, messageService, planetService)
 
 	app := fiber.New(fiber.Config{
 		AppName: "ogamex-go",

@@ -59,6 +59,14 @@ func (r *planetRepository) GetByCoordsAny(ctx context.Context, galaxy, system, p
 	return &planet, nil
 }
 
+func (r *planetRepository) GetBySystem(ctx context.Context, galaxy, system int) ([]*schema.Planet, error) {
+	var planets []*schema.Planet
+	err := r.db.WithContext(ctx).
+		Where("galaxy = ? AND system = ?", galaxy, system).
+		Find(&planets).Error
+	return planets, err
+}
+
 func (r *planetRepository) GetByUserID(ctx context.Context, userID uint) ([]*schema.Planet, error) {
 	var planets []*schema.Planet
 	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&planets).Error

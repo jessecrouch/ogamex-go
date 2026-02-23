@@ -217,3 +217,19 @@ type UnitQueue struct {
 func (UnitQueue) TableName() string {
 	return "unit_queue"
 }
+
+type Message struct {
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	UserID     uint           `gorm:"index" json:"user_id"`
+	Type      int            `gorm:"index" json:"type"`
+	FromUserID *uint         `json:"from_user_id,omitempty"`
+	FromName  string         `json:"from_name"`
+	Subject   string         `json:"subject"`
+	Body      string         `gorm:"type:text" json:"body"`
+	Read      bool           `gorm:"default:false" json:"read"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+func (Message) TableName() string {
+	return "messages"
+}

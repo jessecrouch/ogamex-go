@@ -327,23 +327,25 @@ func (Buddy) TableName() string {
 }
 
 type EspionageReport struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
-	UserID        uint           `gorm:"index" json:"user_id"`
-	TargetUserID  uint           `gorm:"index" json:"target_user_id"`
-	TargetPlanetID uint          `json:"target_planet_id"`
-	Galaxy        int            `json:"galaxy"`
-	System        int            `json:"system"`
-	Position      int            `json:"position"`
-	ReportType    string         `gorm:"size:20" json:"report_type"`
-	Metal         int64          `json:"metal"`
-	Crystal       int64          `json:"crystal"`
-	Deuterium    int64          `json:"deuterium"`
-	Energy        int64          `json:"energy"`
-	Ships         string         `gorm:"type:text" json:"ships"`
-	Defense       string         `gorm:"type:text" json:"defense"`
-	Buildings     string         `gorm:"type:text" json:"buildings"`
-	Read          bool           `gorm:"default:false" json:"read"`
-	CreatedAt     time.Time      `json:"created_at"`
+	ID              uint           `gorm:"primaryKey" json:"id"`
+	UserID          uint           `gorm:"index" json:"user_id"`
+	TargetUserID    uint           `gorm:"index" json:"target_user_id"`
+	TargetPlanetID  uint           `json:"target_planet_id"`
+	Galaxy          int            `json:"galaxy"`
+	System          int            `json:"system"`
+	Position        int            `json:"position"`
+	ReportType      string         `gorm:"size:20" json:"report_type"`
+	TargetUsername  string         `gorm:"size:64" json:"target_username"`
+	TargetClass     int            `json:"target_class"`
+	Metal           int64          `json:"metal"`
+	Crystal         int64          `json:"crystal"`
+	Deuterium       int64          `json:"deuterium"`
+	Energy          int64          `json:"energy"`
+	Ships           string         `gorm:"type:text" json:"ships"`
+	Defense         string         `gorm:"type:text" json:"defense"`
+	Buildings       string         `gorm:"type:text" json:"buildings"`
+	Read            bool           `gorm:"default:false" json:"read"`
+	CreatedAt       time.Time      `json:"created_at"`
 }
 
 func (EspionageReport) TableName() string {

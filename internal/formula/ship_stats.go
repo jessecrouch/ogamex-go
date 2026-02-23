@@ -65,9 +65,13 @@ func CalculateShipSpeed(unitType domain.UnitType, combustionLevel, impulseLevel,
 	var bonus float64 = 1.0
 	switch stats.EngineType {
 	case "combustion":
-		bonus = 1.0 + float64(combustionLevel)*0.1
+		if unitType == domain.UnitEspionageProbe || unitType == domain.UnitRecycler {
+			bonus = 1.0 + float64(combustionLevel)*0.1
+		} else {
+			bonus = 1.0 + float64(combustionLevel)*0.02
+		}
 	case "impulse":
-		bonus = 1.0 + float64(impulseLevel)*0.2
+		bonus = 1.0 + float64(impulseLevel)*0.16
 	case "hyperspace":
 		bonus = 1.0 + float64(hyperspaceLevel)*0.3
 	}

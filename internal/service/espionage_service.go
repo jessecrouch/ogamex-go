@@ -56,30 +56,36 @@ func (s *EspionageService) ExecuteSpyMission(ctx context.Context, userID uint, i
 		reportType = s.calculateReportLevel(probeCount)
 
 		report := &schema.EspionageReport{
-			UserID:        userID,
-			TargetUserID:  targetPlanet.UserID,
+			UserID:         userID,
+			TargetUserID:   targetPlanet.UserID,
 			TargetPlanetID: targetPlanet.ID,
-			Galaxy:        input.TargetGalaxy,
-			System:        input.TargetSystem,
-			Position:      input.TargetPosition,
-			ReportType:    reportType,
-			Metal:         targetPlanet.Metal,
-			Crystal:       targetPlanet.Crystal,
-			Deuterium:    targetPlanet.Deuterium,
-			Energy:        targetPlanet.EnergyAvailable,
-			Ships:         s.formatShips(targetPlanet),
-			Defense:       s.formatDefense(targetPlanet),
-			Buildings:     s.formatBuildings(targetPlanet),
-			Read:          false,
-			CreatedAt:     time.Now(),
+			Galaxy:         input.TargetGalaxy,
+			System:         input.TargetSystem,
+			Position:       input.TargetPosition,
+			ReportType:     reportType,
+			TargetUsername: "Unknown",
+			TargetClass:    0,
+			Metal:          targetPlanet.Metal,
+			Crystal:        targetPlanet.Crystal,
+			Deuterium:      targetPlanet.Deuterium,
+			Energy:         targetPlanet.EnergyAvailable,
+			Ships:          s.formatShips(targetPlanet),
+			Defense:        s.formatDefense(targetPlanet),
+			Buildings:      s.formatBuildings(targetPlanet),
+			Read:           false,
+			CreatedAt:      time.Now(),
 		}
 
 		if targetPlanet.UserID != userID {
 			user, _ := s.userRepo.GetByID(ctx, targetPlanet.UserID)
 			username := "Unknown"
+			targetClass := 0
 			if user != nil {
 				username = user.Username
+				targetClass = user.CharacterClass
 			}
+			report.TargetUsername = username
+			report.TargetClass = targetClass
 
 			msg := &schema.Message{
 				UserID:    targetPlanet.UserID,

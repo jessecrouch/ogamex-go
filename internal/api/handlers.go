@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"ogamex-go/internal/repository"
+	"ogamex-go/internal/schema"
 	"ogamex-go/internal/service"
 )
 
@@ -45,6 +46,8 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 
 	protected := api.Group("", h.authMiddleware)
 
+	protected.Get("/user", h.GetUser)
+	protected.Get("/planets", h.GetUserPlanets)
 	protected.Get("/planets/:id", h.GetPlanet)
 	protected.Get("/planets/:id/resources", h.GetPlanetResources)
 	protected.Get("/planets/:id/buildings", h.GetPlanetBuildings)
@@ -93,6 +96,62 @@ func (h *Handlers) GetStatus(c *fiber.Ctx) error {
 		"version": "0.0.1",
 		"players":  0,
 		"universe": "ogamex-go",
+	})
+}
+
+func (h *Handlers) GetUser(c *fiber.Ctx) error {
+	user := c.Locals("user")
+	if user == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	
+	u := user.(*schema.User)
+	
+	return c.JSON(fiber.Map{
+		"id":              u.ID,
+		"username":       u.Username,
+		"email":          u.Email,
+		"player_name":    u.PlayerName,
+		"dark_matter":    u.DarkMatter,
+		"character_class": u.CharacterClass,
+		"current_planet": u.CurrentPlanetID,
+	})
+}
+
+func (h *Handlers) GetUserPlanets(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	
+	planets, err := h.planetRepo.GetByUserID(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	
+	type PlanetInfo struct {
+		ID       uint   `json:"id"`
+		Name     string `json:"name"`
+		Galaxy   int    `json:"galaxy"`
+		System   int    `json:"system"`
+		Position int    `json:"position"`
+		IsMoon   bool   `json:"is_moon"`
+	}
+	
+	items := make([]PlanetInfo, len(planets))
+	for i, p := range planets {
+		items[i] = PlanetInfo{
+			ID:       p.ID,
+			Name:     p.Name,
+			Galaxy:   p.Galaxy,
+			System:   p.System,
+			Position: p.Position,
+			IsMoon:   p.IsMoon,
+		}
+	}
+	
+	return c.JSON(fiber.Map{
+		"planets": items,
 	})
 }
 

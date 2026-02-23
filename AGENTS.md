@@ -229,9 +229,9 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 
 | Issue | Severity | Status |
 |-------|----------|--------|
-| Test failures in `cost_test.go` | HIGH | Need to fix or remove outdated tests |
-| Missing DTOs | MEDIUM | `internal/dto/` is empty |
-| Missing custom middleware | MEDIUM | `internal/middleware/` is empty |
+| Test failures in `cost_test.go` | HIGH | FIXED |
+| Missing DTOs | MEDIUM | DONE - added dto.go |
+| Missing custom middleware | MEDIUM | DONE - added auth.go |
 | Incomplete fleet missions | MEDIUM | Only basic send - missing attack/transport/colonize/etc |
 | Battle integration | LOW | Rust compiled but not integrated with fleet service |
 | Test coverage | MEDIUM | 76.5% on formula/ - need 95%+ |
@@ -250,8 +250,8 @@ ogamex-go/
 │   ├── scheduler/              ⚠️ Partial - basic cron, needs fleet processing
 │   ├── formula/                ✅ 16 files - production, cost, distance, ship_stats + wiki tests
 │   ├── api/                    ✅ handlers.go + errors.go
-│   ├── dto/                    ❌ Empty - needs DTOs
-│   ├── middleware/             ❌ Empty - needs custom middleware
+│   ├── dto/                    ✅ dto.go - request/response structs
+│   ├── middleware/             ✅ auth.go - custom middleware
 │   ├── logger/                 ✅ logger.go
 │   └── schema/                 ✅ models.go (GORM)
 ├── pkg/rustbattle/             ✅ battle.go (CGO binding)

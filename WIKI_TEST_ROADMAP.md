@@ -385,7 +385,7 @@ go test -v -run "Wiki" ./... 2>&1 | grep -A5 "DISCREPANCY"
 | 7 | Rapid Fire Tables | DONE | ~200 | 0 |
 | 8 | Planet Position | DONE | ~30 | 0 |
 | 9 | Combat Mechanics | DONE | ~15 | 0 |
-| 10 | Player Classes | TODO | 0 | 0 |
+| 10 | Player Classes | DONE | ~10 | 0 |
 | 10 | Player Classes | TODO | 0 | 0 |
 
 ---

@@ -1,0 +1,51 @@
+{
+  "description": "Player class bonuses based on OGame wiki",
+  "classes": {
+    "collector": {
+      "description": "Resource collector focus",
+      "production_bonus": 0.25,
+      "energy_bonus": 0.10,
+      "cargo_bonus": 0.25,
+      "fleet_speed_bonus": 0.25,
+      "mining_drone_bonus": 5,
+      "production_formula": "base * 1.25"
+    },
+    "general": {
+      "description": "Military focus",
+      "ship_cost_reduction": 0.15,
+      "defense_cost_reduction": 0.15,
+      "fleet_speed_bonus": 0.10,
+      "weapons_bonus": 0.08,
+      "shield_bonus": 0.08,
+      "production_formula": "base"
+    },
+    "discoverer": {
+      "description": "Exploration focus",
+      "planet_size_bonus": 0.25,
+      "deuterium_consumption_reduction": 0.50,
+      "expedition_bonus": 0.50,
+      " Scanner_range_bonus": 0.25,
+      "production_formula": "base"
+    }
+  },
+  "class_comparison": {
+    "collector_vs_general": {
+      "collector_production": 1.25,
+      "general_production": 1.0,
+      "collector_ship_cost": 1.0,
+      "general_ship_cost": 0.85
+    },
+    "discoverer_deuterium": {
+      "base_consumption": 100,
+      "discoverer_consumption": 50,
+      "reduction": 0.50
+    }
+  },
+  "resource_production_with_class": {
+    "metal_mine_level_10": 779,
+    "collector_bonus": 1.25,
+    "collector_production": 974,
+    "general_production": 779,
+    "discoverer_production": 779
+  }
+}

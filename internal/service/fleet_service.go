@@ -345,13 +345,14 @@ func (s *FleetService) processAttack(ctx context.Context, mission *schema.FleetM
 	}
 
 	attackerTech, _ := s.techRepo.GetByUserID(ctx, mission.UserID)
-	attackerStats := s.getFleetStats(attackerShips, attackerTech)
 
 	defenderUserID := targetPlanet.UserID
 	defenderTech, _ := s.techRepo.GetByUserID(ctx, defenderUserID)
-	defenderStats := s.getFleetStats(defenderShips, defenderTech)
 
-	battleResult := s.simulateBattle(attackerStats, defenderStats)
+	battleResult, err := s.SimulateBattleWithRust(attackerShips, defenderShips, attackerTech, defenderTech)
+	if err != nil {
+		return err
+	}
 
 	attackerLosses := battleResult.AttackerLosses
 	defenderLosses := battleResult.DefenderLosses

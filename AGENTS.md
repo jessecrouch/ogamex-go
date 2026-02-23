@@ -223,7 +223,7 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 | Repositories | 70% | User, planet, fleet, queues, tech |
 | Scheduler | 80% | Building, research, unit, fleet, production processing |
 | API Endpoints | 60% | ~25 endpoints, auth, rate limiting |
-| Rust Battle Engine | 30% | CGO binding compiles, NOT integrated - uses Go battle |
+| Rust Battle Engine | 60% | CGO binding, SimulateBattleWithRust added - needs call from processAttack |
 
 ### Known Issues & Gaps
 

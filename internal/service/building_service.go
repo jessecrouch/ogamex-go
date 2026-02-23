@@ -167,6 +167,32 @@ func (s *BuildingService) CompleteBuilding(ctx context.Context, queueID uint) er
 		planet.SolarPlant = queue.Level
 	case 12:
 		planet.FusionPlant = queue.Level
+	case 22:
+		planet.MetalStorageBuilding = queue.Level
+	case 23:
+		planet.CrystalStorageBuilding = queue.Level
+	case 24:
+		planet.DeuteriumStorageBuilding = queue.Level
+	case 14:
+		planet.RobotFactory = queue.Level
+	case 21:
+		planet.Shipyard = queue.Level
+	case 31:
+		planet.ResearchLab = queue.Level
+	case 44:
+		planet.MissileSilo = queue.Level
+	case 33:
+		planet.NaniteFactory = queue.Level
+	case 43:
+		planet.Terraformer = queue.Level
+	case 36:
+		planet.SpaceDock = queue.Level
+	case 41:
+		planet.LunarBase = queue.Level
+	case 42:
+		planet.SensorPhalanx = queue.Level
+	case 45:
+		planet.JumpGate = queue.Level
 	}
 
 	planet.FieldsUsed = s.calculateFieldsUsed(planet)

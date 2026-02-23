@@ -850,15 +850,17 @@ func (s *FleetService) getShipStats(shipID int16, tech *schema.UserTech) struct 
 		215: {AttackPower: 700, ShieldPoints: 100, HullPlating: 1500},
 		218: {AttackPower: 1300, ShieldPoints: 200, HullPlating: 2800},
 		219: {AttackPower: 300, ShieldPoints: 50, HullPlating: 600},
+		// Defense units
 		401: {AttackPower: 80, ShieldPoints: 20, HullPlating: 200},
 		402: {AttackPower: 100, ShieldPoints: 25, HullPlating: 200},
 		403: {AttackPower: 250, ShieldPoints: 100, HullPlating: 500},
 		404: {AttackPower: 150, ShieldPoints: 80, HullPlating: 400},
 		405: {AttackPower: 1100, ShieldPoints: 300, HullPlating: 2200},
 		406: {AttackPower: 3000, ShieldPoints: 500, HullPlating: 5000},
-		407: {AttackPower: 1, ShieldPoints: 5000, HullPlating: 100},
-		408: {AttackPower: 80, ShieldPoints: 20, HullPlating: 200},
-		409: {AttackPower: 150, ShieldPoints: 40, HullPlating: 300},
+		407: {AttackPower: 1, ShieldPoints: 5000, HullPlating: 100},   // Small Shield Dome
+		408: {AttackPower: 1, ShieldPoints: 10000, HullPlating: 200}, // Large Shield Dome
+		428: {AttackPower: 80, ShieldPoints: 20, HullPlating: 200},   // Missile Interceptor
+		429: {AttackPower: 150, ShieldPoints: 40, HullPlating: 300},  // Missile Launcher
 	}
 
 	if base, ok := baseStats[shipID]; ok {

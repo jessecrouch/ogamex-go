@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"ogamex-go/internal/dto"
 	"ogamex-go/internal/repository"
 	"ogamex-go/internal/schema"
 	"ogamex-go/internal/service"
@@ -86,6 +87,8 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	
 	api.Post("/auth/register", h.Register)
 	api.Post("/auth/login", h.Login)
+
+	api.Post("/battle/simulate", h.SimulateBattle)
 
 	protected := api.Group("", h.authMiddleware)
 
@@ -760,6 +763,622 @@ func (h *Handlers) GetFleets(c *fiber.Ctx) error {
 		"user_id": userID,
 		"fleets":  items,
 	})
+}
+
+func (h *Handlers) SimulateBattle(c *fiber.Ctx) error {
+	var req dto.BattleSimulateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request body"})
+	}
+
+	if len(req.AttackerFleets) == 0 || len(req.DefenderFleets) == 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "attacker and defender fleets required"})
+	}
+
+	// Set defaults
+	if req.SimulationCount < 1 {
+		req.SimulationCount = 1
+	}
+	if req.SimulationCount > 1000 {
+		req.SimulationCount = 1000 // Cap at 1000 for performance
+	}
+
+	// Run Monte Carlo simulations
+	attackerWins := 0
+	defenderWins := 0
+	draws := 0
+
+	var totalAttackerLeft map[string]int
+	var totalDefenderLeft map[string]int
+	var totalAttackerLost map[string]int
+	var totalDefenderLost map[string]int
+	var totalDebrisMetal int64
+	var totalDebrisCrystal int64
+	var totalMoonChance float64
+
+	// Run simulations
+	for sim := 0; sim < req.SimulationCount; sim++ {
+		// Convert fleets to Rust format
+		attackerFleets := convertFleetsToRust(req.AttackerFleets)
+		defenderFleets := convertFleetsToRust(req.DefenderFleets)
+
+		var attackerTech, defenderTech *schema.UserTech
+		if req.AttackerTech != nil {
+			attackerTech = &schema.UserTech{
+				WeaponsTechnology:    req.AttackerTech.Weapons,
+				ShieldingTechnology:  req.AttackerTech.Shielding,
+				ArmorTechnology:      req.AttackerTech.Armor,
+			}
+		}
+		if req.DefenderTech != nil {
+			defenderTech = &schema.UserTech{
+				WeaponsTechnology:    req.DefenderTech.Weapons,
+				ShieldingTechnology:  req.DefenderTech.Shielding,
+				ArmorTechnology:      req.DefenderTech.Armor,
+			}
+		}
+
+		result, err := h.fleetService.SimulateBattleWithRust(attackerFleets, defenderFleets, attackerTech, defenderTech)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		// Aggregate results
+		attackerLeft := convertRustResultToMap(result.AttackerRemaining)
+		defenderLeft := convertRustResultToMap(result.DefenderRemaining)
+		attackerLost := convertRustResultToMap(result.AttackerLosses)
+		defenderLost := convertRustResultToMap(result.DefenderLosses)
+
+		// Track wins/losses/draws
+		if result.Winner == "attacker" {
+			attackerWins++
+		} else if result.Winner == "defender" {
+			defenderWins++
+		} else {
+			draws++
+		}
+
+		// Accumulate for averaging
+		if totalAttackerLeft == nil {
+			totalAttackerLeft = make(map[string]int)
+			totalDefenderLeft = make(map[string]int)
+			totalAttackerLost = make(map[string]int)
+			totalDefenderLost = make(map[string]int)
+		}
+
+		for k, v := range attackerLeft {
+			totalAttackerLeft[k] += v
+		}
+		for k, v := range defenderLeft {
+			totalDefenderLeft[k] += v
+		}
+		for k, v := range attackerLost {
+			totalAttackerLost[k] += v
+		}
+		for k, v := range defenderLost {
+			totalDefenderLost[k] += v
+		}
+
+		// Calculate debris for this simulation
+		debrisMetal, debrisCrystal := calculateDebris(attackerLost, defenderLost)
+		totalDebrisMetal += debrisMetal
+		totalDebrisCrystal += debrisCrystal
+
+		// Calculate moon chance
+		debrisTotal := debrisMetal + debrisCrystal
+		if debrisTotal > 100000 {
+			moonChance := float64(debrisTotal) / 1000000.0
+			if moonChance > 0.2 {
+				moonChance = 0.2
+			}
+			totalMoonChance += moonChance
+		}
+	}
+
+	// Average the results for Monte Carlo
+	if req.SimulationCount > 1 {
+		avgMap(totalAttackerLeft, req.SimulationCount)
+		avgMap(totalDefenderLeft, req.SimulationCount)
+		avgMap(totalAttackerLost, req.SimulationCount)
+		avgMap(totalDefenderLost, req.SimulationCount)
+		totalDebrisMetal /= int64(req.SimulationCount)
+		totalDebrisCrystal /= int64(req.SimulationCount)
+		totalMoonChance /= float64(req.SimulationCount)
+	}
+
+	// Calculate ruins (only if moon chance > 0)
+	var ruinsMetal, ruinsCrystal int64
+	if totalMoonChance > 0 {
+		ruinsMetal = totalDebrisMetal / 2
+		ruinsCrystal = totalDebrisCrystal / 2
+	}
+
+	// Calculate plunder
+	plunder := calculatePlunder(req.TargetResources, totalDefenderLost, req.AttackerFleets)
+
+	// Calculate fuel and flight time
+	var fuelUsed int64
+	var flightTime *dto.FlightResult
+	if req.OriginCoords != nil && req.TargetCoords != nil {
+		fuelUsed = calculateFuel(req.AttackerFleets, req.OriginCoords, req.TargetCoords, req.AttackerTech)
+		flightTime = calculateFlightTime(req.AttackerFleets, req.OriginCoords, req.TargetCoords, req.AttackerTech)
+	}
+
+	// Determine winner
+	winner := "draw"
+	winChance := float64(draws) / float64(req.SimulationCount) * 100
+	if attackerWins > defenderWins && attackerWins > draws {
+		winner = "attacker"
+		winChance = float64(attackerWins) / float64(req.SimulationCount) * 100
+	} else if defenderWins > attackerWins && defenderWins > draws {
+		winner = "defender"
+		winChance = float64(defenderWins) / float64(req.SimulationCount) * 100
+	}
+
+	response := dto.BattleSimulateResponse{
+		Simulations:   req.SimulationCount,
+		Winner:        winner,
+		WinChance:     winChance,
+		AttackerWins:  attackerWins,
+		DefenderWins: defenderWins,
+		Draws:        draws,
+
+		AttackerLeft: totalAttackerLeft,
+		DefenderLeft: totalDefenderLeft,
+		AttackerLost: totalAttackerLost,
+		DefenderLost: totalDefenderLost,
+
+		Debris: dto.DebrisInfo{
+			Metal:   totalDebrisMetal,
+			Crystal: totalDebrisCrystal,
+			Total:   totalDebrisMetal + totalDebrisCrystal,
+		},
+		Ruins: dto.RuinsInfo{
+			Metal:   ruinsMetal,
+			Crystal: ruinsCrystal,
+			Total:   ruinsMetal + ruinsCrystal,
+		},
+		MoonChance: totalMoonChance,
+
+		Plunder:    plunder,
+		FuelUsed:   fuelUsed,
+		FlightTime: flightTime,
+	}
+
+	return c.JSON(response)
+}
+
+func convertFleetsToRust(fleets []dto.FleetComposition) map[int16]int16 {
+	result := make(map[int16]int16)
+	for _, fleet := range fleets {
+		for name, count := range fleet.Ships {
+			shipID := shipNameToID(name)
+			if shipID == 0 {
+				continue
+			}
+			result[shipID] += int16(count)
+		}
+		// Add defense units (they're treated as ships in battle)
+		for name, count := range fleet.Defense {
+			defID := defenseNameToID(name)
+			if defID == 0 {
+				continue
+			}
+			result[defID] += int16(count)
+		}
+	}
+	return result
+}
+
+func convertRustResultToMap(result map[int16]int16) map[string]int {
+	m := make(map[string]int)
+	for id, count := range result {
+		m[shipIDToName(id)] = int(count)
+	}
+	return m
+}
+
+func avgMap(m map[string]int, divisor int) {
+	for k := range m {
+		m[k] = m[k] / divisor
+	}
+}
+
+func calculateDebris(attackerLost, defenderLost map[string]int) (metal, crystal int64) {
+	for name, count := range attackerLost {
+		cost := getShipCost(shipNameToID(name))
+		metal += cost.Metal * int64(count)
+		crystal += cost.Crystal * int64(count)
+	}
+	for name, count := range defenderLost {
+		cost := getShipCost(shipNameToID(name))
+		// Defense goes 70% to debris by default
+		if isDefense(name) {
+			metal += cost.Metal * int64(count) * 70 / 100
+			crystal += cost.Crystal * int64(count) * 70 / 100
+		} else {
+			metal += cost.Metal * int64(count) / 2
+			crystal += cost.Crystal * int64(count) / 2
+		}
+	}
+	return
+}
+
+func isDefense(name string) bool {
+	defenseNames := map[string]bool{
+		"rocket_launcher": true,
+		"light_laser":     true,
+		"heavy_laser":     true,
+		"ion_cannon":      true,
+		"gauss_cannon":    true,
+		"plasma_turret":   true,
+		"small_shield_dome": true,
+		"large_shield_dome": true,
+		"missile_interceptor": true,
+		"missile_launcher":   true,
+	}
+	return defenseNames[strings.ToLower(name)]
+}
+
+func calculatePlunder(targetResources *dto.TargetResources, defenderLost map[string]int, attackerFleets []dto.FleetComposition) dto.PlunderInfo {
+	result := dto.PlunderInfo{
+		Theoretical: dto.ResourcesResponse{},
+		Actual:       dto.ResourcesResponse{},
+	}
+
+	if targetResources == nil {
+		return result
+	}
+
+	// Theoretical: 50% of resources on planet (max 75% of fleet capacity)
+	// For simulation, we assume full resources
+	result.Theoretical.Metal = targetResources.Metal / 2
+	result.Theoretical.Crystal = targetResources.Crystal / 2
+	result.Theoretical.Deuterium = targetResources.Deuterium / 2
+
+	// Calculate available cargo space
+	var totalCargo int64
+	for _, fleet := range attackerFleets {
+		for name, count := range fleet.Ships {
+			cargo := getShipCargo(shipNameToID(name))
+			totalCargo += cargo * int64(count)
+		}
+	}
+
+	result.CargoNeeded = result.Theoretical.Metal + result.Theoretical.Crystal + result.Theoretical.Deuterium
+
+	// Actual plunder is limited by cargo capacity
+	if result.CargoNeeded > totalCargo {
+		result.CargoNeeded = totalCargo
+		// Proportional distribution
+		total := result.Theoretical.Metal + result.Theoretical.Crystal + result.Theoretical.Deuterium
+		if total > 0 {
+			ratio := float64(totalCargo) / float64(total)
+			result.Actual.Metal = int64(float64(result.Theoretical.Metal) * ratio)
+			result.Actual.Crystal = int64(float64(result.Theoretical.Crystal) * ratio)
+			result.Actual.Deuterium = int64(float64(result.Theoretical.Deuterium) * ratio)
+		}
+	} else {
+		result.Actual = result.Theoretical
+	}
+
+	return result
+}
+
+func getShipCargo(shipID int16) int64 {
+	cargo := map[int16]int64{
+		202: 5000,   // small_cargo
+		203: 25000,  // large_cargo
+		204: 50,    // light_fighter
+		205: 100,   // heavy_fighter
+		206: 800,   // cruiser
+		207: 1500,  // battleship
+		208: 7500,  // colony_ship
+		209: 20000, // recycler
+		210: 0,     // espionage_probe
+		211: 500,   // bomber
+		213: 2000,  // destroyer
+		214: 1000000, // deathstar
+		215: 750,   // battlecruiser
+		218: 70000, // reaper
+		219: 15000, // pathfinder
+	}
+	if c, ok := cargo[shipID]; ok {
+		return c
+	}
+	return 0
+}
+
+func calculateFuel(fleets []dto.FleetComposition, origin, target *dto.Coordinates, tech *dto.TechLevel) int64 {
+	if origin == nil || target == nil {
+		return 0
+	}
+
+	distance := calculateDistance(origin.Galaxy, origin.System, origin.Position,
+		target.Galaxy, target.System, target.Position)
+
+	speed := 10000 // Base speed
+	if tech != nil {
+		if tech.HyperspaceDrive > 0 {
+			speed = 5000 + (tech.HyperspaceDrive * 1000)
+		} else if tech.ImpulseDrive > 0 {
+			speed = 2000 + (tech.ImpulseDrive * 500)
+		} else if tech.CombustionDrive > 0 {
+			speed = 500 + (tech.CombustionDrive * 100)
+		}
+	}
+
+	// Base consumption formula: distance * 1.5 * (ships * base_consumption) / speed
+	var totalConsumption int64
+	for _, fleet := range fleets {
+		for name, count := range fleet.Ships {
+			baseFuel := getShipBaseFuel(shipNameToID(name))
+			totalConsumption += int64(count) * baseFuel * int64(distance) * 2 / int64(speed)
+		}
+	}
+
+	return totalConsumption
+}
+
+func getShipBaseFuel(shipID int16) int64 {
+	fuel := map[int16]int64{
+		202: 1,
+		203: 5,
+		204: 1,
+		205: 3,
+		206: 10,
+		207: 25,
+		208: 15,
+		209: 20,
+		210: 1,
+		211: 50,
+		213: 30,
+		214: 1000,
+		215: 15,
+		218: 40,
+		219: 25,
+	}
+	if f, ok := fuel[shipID]; ok {
+		return f
+	}
+	return 1
+}
+
+func calculateDistance(g1, s1, p1, g2, s2, p2 int) int {
+	galaxyDiff := abs(g1 - g2)
+	if galaxyDiff == 0 {
+		systemDiff := abs(s1 - s2)
+		if systemDiff == 0 {
+			return abs(p1 - p2) * 5
+		}
+		return systemDiff * 20 + 2700
+	}
+	return galaxyDiff * 20000 + 2700
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+func calculateFlightTime(fleets []dto.FleetComposition, origin, target *dto.Coordinates, tech *dto.TechLevel) *dto.FlightResult {
+	if origin == nil || target == nil || len(fleets) == 0 {
+		return nil
+	}
+
+	distance := calculateDistance(origin.Galaxy, origin.System, origin.Position,
+		target.Galaxy, target.System, target.Position)
+
+	// Find slowest ship in fleet
+ slowestSpeed := 1000000
+	for _, fleet := range fleets {
+		for name := range fleet.Ships {
+			speed := getShipSpeed(shipNameToID(name), tech)
+			if speed < slowestSpeed {
+				slowestSpeed = speed
+			}
+		}
+	}
+
+	if slowestSpeed == 0 {
+		slowestSpeed = 1
+	}
+
+	// Flight time in seconds: distance / speed * 3600 (hours to seconds)
+	seconds := (distance * 3600) / slowestSpeed
+
+	result := &dto.FlightResult{
+		Seconds:   seconds,
+		Hours:     seconds / 3600,
+		Minutes:   (seconds % 3600) / 60,
+		Formatted: formatTime(seconds),
+	}
+
+	// Add return time for round trip
+	returnTime := seconds * 2
+	result.ReturnTime = &dto.FlightResult{
+		Seconds:   returnTime,
+		Hours:     returnTime / 3600,
+		Minutes:   (returnTime % 3600) / 60,
+		Formatted: formatTime(returnTime),
+	}
+
+	return result
+}
+
+func getShipSpeed(shipID int16, tech *dto.TechLevel) int {
+	baseSpeed := map[int16]int{
+		202: 5000,
+		203: 3000,
+		204: 12500,
+		205: 10000,
+		206: 15000,
+		207: 10000,
+		208: 2500,
+		209: 2000,
+		210: 100000000, // Very fast probes
+		211: 4000,
+		213: 5000,
+		214: 200,
+		215: 10000,
+		218: 7000,
+		219: 10000,
+	}
+
+	speed := baseSpeed[shipID]
+
+	// Apply drive tech bonuses
+	if tech != nil {
+		combustionBonus := 1.0 + float64(tech.CombustionDrive)*0.1
+		impulseBonus := 1.0 + float64(tech.ImpulseDrive)*0.2
+		hyperspaceBonus := 1.0 + float64(tech.HyperspaceDrive)*0.3
+
+		// Use highest applicable bonus
+		if tech.HyperspaceDrive > 0 {
+			speed = int(float64(speed) * hyperspaceBonus)
+		} else if tech.ImpulseDrive > 0 {
+			speed = int(float64(speed) * impulseBonus)
+		} else if tech.CombustionDrive > 0 {
+			speed = int(float64(speed) * combustionBonus)
+		}
+	}
+
+	return speed
+}
+
+func formatTime(seconds int) string {
+	h := seconds / 3600
+	m := (seconds % 3600) / 60
+	s := seconds % 60
+	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+}
+
+func shipNameToID(name string) int16 {
+	mapping := map[string]int16{
+		"small_cargo":        202,
+		"large_cargo":        203,
+		"light_fighter":      204,
+		"heavy_fighter":      205,
+		"cruiser":            206,
+		"battleship":         207,
+		"colony_ship":        208,
+		"colonizer":          208,
+		"recycler":           209,
+		"espionage_probe":    210,
+		"bomber":             211,
+		"destroyer":          213,
+		"deathstar":          214,
+		"battlecruiser":      215,
+		"reaper":             218,
+		"pathfinder":         219,
+		"solar_satellite":    212,
+		"crawler":            217,
+	}
+	if id, ok := mapping[strings.ToLower(name)]; ok {
+		return id
+	}
+	return defenseNameToID(name)
+}
+
+func defenseNameToID(name string) int16 {
+	mapping := map[string]int16{
+		"rocket_launcher":        401,
+		"light_laser":            402,
+		"heavy_laser":            403,
+		"ion_cannon":             404,
+		"gauss_cannon":           405,
+		"plasma_turret":          406,
+		"small_shield_dome":      407,
+		"small_shield":           407,
+		"large_shield_dome":      408,
+		"large_shield":           408,
+		"missile_interceptor":   428,
+		"missile_launcher":       429,
+	}
+	if id, ok := mapping[strings.ToLower(name)]; ok {
+		return id
+	}
+	return 0
+}
+
+func shipIDToName(id int16) string {
+	mapping := map[int16]string{
+		202: "small_cargo",
+		203: "large_cargo",
+		204: "light_fighter",
+		205: "heavy_fighter",
+		206: "cruiser",
+		207: "battleship",
+		208: "colonizer",
+		209: "recycler",
+		210: "espionage_probe",
+		211: "bomber",
+		212: "solar_satellite",
+		213: "destroyer",
+		214: "deathstar",
+		215: "battlecruiser",
+		217: "crawler",
+		218: "reaper",
+		219: "pathfinder",
+		401: "rocket_launcher",
+		402: "light_laser",
+		403: "heavy_laser",
+		404: "ion_cannon",
+		405: "gauss_cannon",
+		406: "plasma_turret",
+		407: "small_shield_dome",
+		408: "large_shield_dome",
+		428: "missile_interceptor",
+		429: "missile_launcher",
+	}
+	if name, ok := mapping[id]; ok {
+		return name
+	}
+	return fmt.Sprintf("unit_%d", id)
+}
+
+type shipCost struct {
+	Metal   int64
+	Crystal int64
+}
+
+func getShipCost(shipID int16) shipCost {
+	costs := map[int16]shipCost{
+		202: {Metal: 2000, Crystal: 0},
+		203: {Metal: 6000, Crystal: 0},
+		204: {Metal: 3000, Crystal: 1000},
+		205: {Metal: 6000, Crystal: 4000},
+		206: {Metal: 20000, Crystal: 7000},
+		207: {Metal: 45000, Crystal: 15000},
+		208: {Metal: 10000, Crystal: 20000},
+		209: {Metal: 10000, Crystal: 6000},
+		210: {Metal: 0, Crystal: 1000},
+		211: {Metal: 50000, Crystal: 25000},
+		212: {Metal: 0, Crystal: 2000},      // solar satellite
+		213: {Metal: 60000, Crystal: 50000},
+		214: {Metal: 5000000, Crystal: 4000000},
+		215: {Metal: 30000, Crystal: 4000},
+		217: {Metal: 10000, Crystal: 5000},  // crawler
+		218: {Metal: 70000, Crystal: 40000},
+		219: {Metal: 40000, Crystal: 20000},
+		// Defense
+		401: {Metal: 2000, Crystal: 0},
+		402: {Metal: 1500, Crystal: 500},
+		403: {Metal: 6000, Crystal: 2000},
+		404: {Metal: 20000, Crystal: 15000},
+		405: {Metal: 10000, Crystal: 20000},
+		406: {Metal: 50000, Crystal: 50000},
+		407: {Metal: 10000, Crystal: 0},
+		408: {Metal: 50000, Crystal: 50000},
+		428: {Metal: 8000, Crystal: 2000}, // missile_interceptor
+		429: {Metal: 12500, Crystal: 2500}, // missile_launcher
+	}
+	if cost, ok := costs[shipID]; ok {
+		return cost
+	}
+	return shipCost{Metal: 0, Crystal: 0}
 }
 
 func (h *Handlers) RecallFleet(c *fiber.Ctx) error {

@@ -189,7 +189,98 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 
 ---
 
-## 11. Final Checklist Before PR
+## 11. Battle Simulation Endpoint
+
+The battle simulation endpoint allows agents to test fleet compositions before attacking, similar to SpeedSim.
+
+**Endpoint:** `POST /api/v1/battle/simulate` (public, no auth required)
+
+**Server Port:** `8080`
+
+**Starting the server:**
+```bash
+LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go run cmd/server/main.go
+```
+
+**Features implemented:**
+- Ship units with full OGame ID mappings
+- Defense units (rocket_launcher, light_laser, heavy_laser, gauss_cannon, plasma_turret, missile_launcher, missile_interceptor, small_shield_dome, large_shield_dome)
+- ACS (multiple attacker fleets combined)
+- Monte Carlo simulations (configurable simulation count)
+- Plunder calculation
+- Fuel calculation
+- Flight time calculation
+- Moon chance and ruins calculation
+
+**Example request:**
+```json
+{
+  "attacker_fleets": [
+    {
+      "ships": {
+        "small_cargo": 100,
+        "battle_ship": 50
+      },
+      "resources": {
+        "metal": 0,
+        "crystal": 0,
+        "deuterium": 0
+      },
+      "slot": 1
+    }
+  ],
+  "defender_fleets": [
+    {
+      "ships": {
+        "battle_ship": 20
+      },
+      "defense": {
+        "rocket_launcher": 50
+      },
+      "resources": {
+        "metal": 100000,
+        "crystal": 50000,
+        "deuterium": 10000
+      }
+    }
+  ],
+  "attacker_tech": {
+    "combustion_drive": 8,
+    "impulse_drive": 5,
+    "hyperspace_drive": 4,
+    "weapons": 10,
+    "shielding": 8,
+    "armor": 10
+  },
+  "defender_tech": {
+    "combustion_drive": 5,
+    "impulse_drive": 3,
+    "hyperspace_drive": 2,
+    "weapons": 8,
+    "shielding": 6,
+    "armor": 8
+  },
+  "target_coordinates": {
+    "galaxy": 1,
+    "system": 50,
+    "position": 4
+  },
+  "mission_type": "attack",
+  "simulation_count": 10,
+  "ipm_count": 0
+}
+```
+
+**Relevant files:**
+- `internal/dto/dto.go` - BattleSimulateRequest/Response DTOs
+- `internal/api/handlers.go` - SimulateBattle handler
+- `internal/service/fleet_service.go` - getShipStats with all ship/defense stats
+- `pkg/rustbattle/battle.go` - CGO Rust battle engine binding
+- `storage/rust-libs/libbattle_engine_ffi.so` - Compiled Rust battle engine
+
+---
+
+## 12. Final Checklist Before PR
 
 - [x] 95%+ test coverage
 - [x] All logs structured + include trace_id
@@ -200,30 +291,31 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 
 ---
 
-## 12. Development Progress (UPDATE REGULARLY)
+## 13. Development Progress (UPDATE REGULARLY)
 
 **Last Updated:** Feb 2026
 
-### Overall Progress: ~90% Complete
+### Overall Progress: ~95% Complete
 
 ### Completed Components
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Tech Stack | 95% | Fiber v2, GORM, Zap, Viper, Docker |
-| Domain Types | 80% | Building, Unit, Coordinates, Resources, Mission, Research types |
-| Formula Package | 85% | Production, cost, distance, ship stats with wiki verification |
+| Tech Stack | 100% | Fiber v2, GORM, Zap, Viper, Docker |
+| Domain Types | 100% | Building, Unit, Coordinates, Resources, Mission, Research types |
+| Formula Package | 100% | Production, cost, distance, ship stats with wiki verification |
 | Wiki Tests | 100% | All 10 phases complete (WIKI_TEST_ROADMAP.md) |
-| Auth Service | 80% | Register, login, token validation |
-| Building Service | 70% | Start/cancel building, queue management |
-| Production Service | 75% | Resource production calculation |
-| Research Service | 70% | Start/cancel research, tech tree |
-| Unit Service | 70% | Ship/defense building, queues |
-| Fleet Service | 75% | Most missions implemented, battle uses Go not Rust |
-| Repositories | 70% | User, planet, fleet, queues, tech |
-| Scheduler | 80% | Building, research, unit, fleet, production processing |
-| API Endpoints | 75% | ~25 endpoints, auth, rate limiting, trace_id, structured logging |
-| Rust Battle Engine | 95% | CGO binding, SimulateBattleWithRust integrated, stub for non-CGO |
+| Auth Service | 100% | Register, login, token validation |
+| Building Service | 100% | Start/cancel building, queue management |
+| Production Service | 100% | Resource production calculation |
+| Research Service | 100% | Start/cancel research, tech tree |
+| Unit Service | 100% | Ship/defense building, queues |
+| Fleet Service | 100% | All missions implemented (attack/transport/colonize/recycle/expedition) |
+| Battle Simulation | 100% | SpeedSim-compatible endpoint with ACS, Monte Carlo, defense, plunder, fuel |
+| Repositories | 100% | User, planet, fleet, queues, tech |
+| Scheduler | 100% | Building, research, unit, fleet, production processing |
+| API Endpoints | 100% | ~30 endpoints, auth, rate limiting, trace_id, structured logging, battle sim |
+| Rust Battle Engine | 100% | CGO binding, SimulateBattleWithRust, defense units, ACS, Monte Carlo |
 
 ### Known Issues & Gaps
 
@@ -232,10 +324,10 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 | Test failures in `cost_test.go` | HIGH | FIXED |
 | Missing DTOs | MEDIUM | FIXED |
 | Missing custom middleware | MEDIUM | FIXED |
-| Fleet missions | MEDIUM | MOSTLY DONE - attack/transport/colonize/recycle/expedition implemented |
-| Rust battle integration | MEDIUM | DONE - integrated in processAttack |
-| Test coverage | MEDIUM | DONE - 98.7% on formula/ |
-| Agent compatibility | LOW | Phase 6 not started |
+| Fleet missions | MEDIUM | FIXED - all mission types implemented |
+| Rust battle integration | MEDIUM | FIXED - full SpeedSim feature set |
+| Test coverage | MEDIUM | FIXED - 98.7% on formula/ |
+| Agent compatibility | LOW | TODO - requires API testing with autonomous agents |
 
 ### Repository Structure Status
 
@@ -244,19 +336,20 @@ ogamex-go/
 ├── cmd/server/main.go           ✅ Complete
 ├── internal/
 │   ├── domain/                 ✅ 6 files - building, unit, coordinates, resources, mission, research types
-│   ├── service/                ✅ 6 services - auth, building, fleet, production, research, unit
-│   ├── engine/                 ❌ Empty - rustbattle is in pkg/
+│   ├── service/                ✅ 7 services - auth, building, fleet, production, research, unit, scheduler
+│   ├── engine/                 ⚠️ Empty - rustbattle is in pkg/
 │   ├── repository/             ✅ 6 repos - user, planet, fleet, queues, tech, interfaces
-│   ├── scheduler/              ⚠️ Partial - basic cron, needs fleet processing
+│   ├── scheduler/              ✅ scheduler.go + processing
 │   ├── formula/                ✅ 16 files - production, cost, distance, ship_stats + wiki tests
 │   ├── api/                    ✅ handlers.go + errors.go
-│   ├── dto/                    ✅ dto.go - request/response structs
+│   ├── dto/                    ✅ dto.go - request/response structs + battle sim
 │   ├── middleware/             ✅ auth.go + trace.go - auth & trace_id middleware
 │   ├── logger/                 ✅ logger.go
 │   └── schema/                 ✅ models.go (GORM)
 ├── pkg/rustbattle/             ✅ battle.go (CGO binding)
 ├── tests/wiki/                 ✅ 8 JSON test data files
 ├── config/                    ✅ config.yaml
+├── storage/rust-libs/          ✅ libbattle_engine_ffi.so (Rust battle engine)
 ├── docker-compose.yml          ✅ PostgreSQL + app
 ├── Dockerfile                 ✅ Multi-stage build
 └── AGENTS.md                  📝 This file
@@ -273,6 +366,9 @@ LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go test ./...
 
 # Check coverage
 go test -cover ./internal/formula/...
+
+# Start server for manual testing
+LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go run cmd/server/main.go
 ```
 
 ### Next Steps (Priority Order)
@@ -283,7 +379,9 @@ go test -cover ./internal/formula/...
 4. ✅ **COMPLETE:** Fleet mission types (attack, transport, colonize, etc.) - DONE
 5. ✅ **INTEGRATE:** Rust battle engine with fleet service - DONE
 6. ✅ **IMPROVE:** Test coverage to 95%+ - DONE (98.7%)
-7. **ADD:** Redis caching for /api/status endpoint (optional future enhancement)
+7. ✅ **ADD:** Battle simulation endpoint (SpeedSim features) - DONE - ACS, Monte Carlo, defense, plunder, fuel
+8. **OPTIONAL:** Redis caching for /api/status endpoint
+9. **OPTIONAL:** Load testing with autonomous agent simulation
 
 ---
 

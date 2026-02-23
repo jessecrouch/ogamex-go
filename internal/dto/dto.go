@@ -235,3 +235,111 @@ type StatusResponse struct {
 	APIBase   string `json:"api_base"`
 	Time      int64  `json:"time"`
 }
+
+type BattleSimulateRequest struct {
+	AttackerFleets []FleetComposition `json:"attacker_fleets"`
+	DefenderFleets []FleetComposition `json:"defender_fleets"`
+	AttackerTech   *TechLevel          `json:"attacker_tech,omitempty"`
+	DefenderTech   *TechLevel          `json:"defender_tech,omitempty"`
+
+	SimulationCount int  `json:"simulation_count,omitempty"` // 1 for deterministic, N for Monte Carlo
+	RapidFire       bool `json:"rapid_fire,omitempty"`       // Default true
+	DefToDebris    int  `json:"def_to_debris_percent,omitempty"` // 0-100, default 70
+
+	OriginCoords *Coordinates `json:"origin_coords,omitempty"`
+	TargetCoords *Coordinates `json:"target_coords,omitempty"`
+	TargetResources *TargetResources `json:"target_resources,omitempty"`
+
+	IPM *IPMRequest `json:"ipm,omitempty"`
+}
+
+type FleetComposition struct {
+	Slot     int                    `json:"slot,omitempty"` // ACS slot number
+	Ships    map[string]int         `json:"ships"`
+	Defense  map[string]int        `json:"defense,omitempty"`
+	Resources *FleetResources      `json:"resources,omitempty"`
+}
+
+type Coordinates struct {
+	Galaxy   int `json:"galaxy"`
+	System   int `json:"system"`
+	Position int `json:"position"`
+}
+
+type TargetResources struct {
+	Metal     int64 `json:"metal"`
+	Crystal   int64 `json:"crystal"`
+	Deuterium int64 `json:"deuterium"`
+}
+
+type IPMRequest struct {
+	Count       int `json:"count"`
+	TargetID    int `json:"target_id"` // 401=rocket_launcher, etc.
+	Technologies *TechLevel `json:"technologies,omitempty"`
+}
+
+type TechLevel struct {
+	Weapons         int `json:"weapons"`
+	Shielding       int `json:"shielding"`
+	Armor           int `json:"armor"`
+	CombustionDrive int `json:"combustion_drive,omitempty"`
+	ImpulseDrive    int `json:"impulse_drive,omitempty"`
+	HyperspaceDrive int `json:"hyperspace_drive,omitempty"`
+}
+
+type BattleSimulateResponse struct {
+	Simulations int `json:"simulations"`
+
+	Winner          string                    `json:"winner"`
+	WinChance       float64                   `json:"win_chance"` // percentage for Monte Carlo
+	AttackerWins    int                       `json:"attacker_wins"`
+	DefenderWins    int                       `json:"defender_wins"`
+	Draws           int                       `json:"draws"`
+
+	AttackerLeft   map[string]int            `json:"attacker_left"`
+	DefenderLeft   map[string]int            `json:"defender_left"`
+	AttackerLost   map[string]int            `json:"attacker_lost"`
+	DefenderLost   map[string]int            `json:"defender_lost"`
+
+	Debris         DebrisInfo                `json:"debris"`
+	Ruins          RuinsInfo                 `json:"ruins"`
+	MoonChance     float64                   `json:"moon_chance"`
+
+	Plunder    PlunderInfo  `json:"plunder"`
+	FuelUsed   int64        `json:"fuel_used"`
+	FlightTime *FlightResult `json:"flight_time,omitempty"`
+
+	IPMResult *IPMResult `json:"ipm_result,omitempty"`
+}
+
+type PlunderInfo struct {
+	Theoretical  ResourcesResponse `json:"theoretical"`
+	Actual       ResourcesResponse `json:"actual"`
+	CargoNeeded int64             `json:"cargo_needed"`
+}
+
+type FlightResult struct {
+	Seconds     int    `json:"seconds"`
+	Hours       int    `json:"hours"`
+	Minutes     int    `json:"minutes"`
+	Formatted   string `json:"formatted"`
+	ReturnTime  *FlightResult `json:"return_time,omitempty"`
+}
+
+type IPMResult struct {
+	Destroyed     map[string]int `json:"destroyed"`
+	RemainingDef map[string]int `json:"remaining_def"`
+	IPMLosses    int            `json:"ipm_losses"`
+}
+
+type DebrisInfo struct {
+	Metal     int64 `json:"metal"`
+	Crystal   int64 `json:"crystal"`
+	Total     int64 `json:"total"`
+}
+
+type RuinsInfo struct {
+	Metal     int64 `json:"metal"`
+	Crystal   int64 `json:"crystal"`
+	Total     int64 `json:"total"`
+}

@@ -87,8 +87,8 @@ func CalculateSolarSatelliteEnergyProduction(temperature int, count int) int64 {
 	if count <= 0 {
 		return 0
 	}
-	production := float64((temperature+140)/6) * float64(count)
-	return int64(math.Floor(production))
+	production := math.Floor(float64(temperature+140)/6.0) * float64(count)
+	return int64(production)
 }
 
 func GetProduction(building domain.BuildingType, level int, temp int, energyFactor float64, energyTechLevel int) domain.Resources {

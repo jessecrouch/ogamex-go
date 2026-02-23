@@ -97,6 +97,8 @@ Rule: **Red → Green → Refactor** for every new function.
 
 Example test file name: `formula_production_test.go`
 
+**Wiki Verification Tests:** See [WIKI_TEST_ROADMAP.md](./WIKI_TEST_ROADMAP.md) for comprehensive cross-checking of our implementation against the OGame wiki documentation. Run with `go test -v -run Wiki ./...`.
+
 ---
 
 ## 6. Logging-Driven Development

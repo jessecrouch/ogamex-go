@@ -1,0 +1,167 @@
+{
+  "description": "OGame Wiki Production Test Data - Values match OGameX (uses Ceil rounding)",
+  "source": "https://ogame.fandom.com/wiki/Buildings",
+  "notes": "Values in this file match OGameX implementation (Ceil rounding). Differences from wiki are documented in WIKI_TEST_ROADMAP.md",
+  "metal_mine": {
+    "base_production": 30,
+    "base_cost": {"metal": 60, "crystal": 15, "deuterium": 0},
+    "energy_factor": 1.1,
+    "cost_factor": 1.5,
+    "test_cases": [
+      {"level": 0, "production": 0, "energy_consumption": 0},
+      {"level": 1, "production": 33, "energy_consumption": 11},
+      {"level": 2, "production": 73, "energy_consumption": 25},
+      {"level": 3, "production": 120, "energy_consumption": 40},
+      {"level": 4, "production": 176, "energy_consumption": 59},
+      {"level": 5, "production": 242, "energy_consumption": 81},
+      {"level": 6, "production": 319, "energy_consumption": 107},
+      {"level": 7, "production": 410, "energy_consumption": 137},
+      {"level": 8, "production": 515, "energy_consumption": 172},
+      {"level": 9, "production": 637, "energy_consumption": 213},
+      {"level": 10, "production": 779, "energy_consumption": 260},
+      {"level": 11, "production": 942, "energy_consumption": 314},
+      {"level": 12, "production": 1130, "energy_consumption": 377},
+      {"level": 13, "production": 1347, "energy_consumption": 449},
+      {"level": 14, "production": 1595, "energy_consumption": 532},
+      {"level": 15, "production": 1880, "energy_consumption": 627},
+      {"level": 16, "production": 2206, "energy_consumption": 736},
+      {"level": 17, "production": 2578, "energy_consumption": 860},
+      {"level": 18, "production": 3003, "energy_consumption": 1001},
+      {"level": 19, "production": 3487, "energy_consumption": 1163},
+      {"level": 20, "production": 4037, "energy_consumption": 1346},
+      {"level": 25, "production": 8127, "energy_consumption": 2709},
+      {"level": 30, "production": 15705, "energy_consumption": 5235}
+    ]
+  },
+  "crystal_mine": {
+    "base_production": 20,
+    "base_cost": {"metal": 48, "crystal": 24, "deuterium": 0},
+    "energy_factor": 1.1,
+    "cost_factor": 1.6,
+    "energy_consumption_factor": 1.5,
+    "test_cases": [
+      {"level": 0, "production": 0, "energy_consumption": 0},
+      {"level": 1, "production": 22, "energy_consumption": 11},
+      {"level": 2, "production": 49, "energy_consumption": 25},
+      {"level": 3, "production": 80, "energy_consumption": 40},
+      {"level": 4, "production": 117, "energy_consumption": 59},
+      {"level": 5, "production": 162, "energy_consumption": 81},
+      {"level": 6, "production": 213, "energy_consumption": 107},
+      {"level": 7, "production": 273, "energy_consumption": 137},
+      {"level": 8, "production": 343, "energy_consumption": 172},
+      {"level": 9, "production": 425, "energy_consumption": 213},
+      {"level": 10, "production": 519, "energy_consumption": 260},
+      {"level": 15, "production": 1254, "energy_consumption": 627},
+      {"level": 20, "production": 2691, "energy_consumption": 1346},
+      {"level": 25, "production": 5418, "energy_consumption": 2261},
+      {"level": 30, "production": 10470, "energy_consumption": 3613}
+    ]
+  },
+  "deuterium_synthesizer": {
+    "base_production": 10,
+    "base_cost": {"metal": 225, "crystal": 75, "deuterium": 0},
+    "energy_factor": 1.1,
+    "cost_factor": 1.5,
+    "test_cases": [
+      {"level": 0, "temp": 50, "production": 0, "energy_consumption": 0},
+      {"level": 1, "temp": 50, "production": 14, "energy_consumption": 22},
+      {"level": 5, "temp": 50, "production": 108, "energy_consumption": 162},
+      {"level": 10, "temp": 47, "production": 326, "energy_consumption": 489},
+      {"level": 10, "temp": 50, "production": 323, "energy_consumption": 489},
+      {"level": 10, "temp": 20, "production": 361, "energy_consumption": 489},
+      {"level": 10, "temp": 0, "production": 399, "energy_consumption": 489},
+      {"level": 10, "temp": -50, "production": 474, "energy_consumption": 489},
+      {"level": 15, "temp": 47, "production": 789, "energy_consumption": 1028},
+      {"level": 20, "temp": 47, "production": 1686, "energy_consumption": 2133}
+    ],
+    "temperature_formula": "1.36 - 0.004 * average_temp"
+  },
+  "solar_plant": {
+    "base_production": 20,
+    "base_cost": {"metal": 75, "crystal": 30, "deuterium": 0},
+    "energy_factor": 1.1,
+    "cost_factor": 1.5,
+    "test_cases": [
+      {"level": 0, "production": 0},
+      {"level": 1, "production": 22},
+      {"level": 2, "production": 49},
+      {"level": 3, "production": 80},
+      {"level": 4, "production": 117},
+      {"level": 5, "production": 162},
+      {"level": 6, "production": 213},
+      {"level": 7, "production": 273},
+      {"level": 8, "production": 343},
+      {"level": 9, "production": 425},
+      {"level": 10, "production": 519},
+      {"level": 15, "production": 1254},
+      {"level": 20, "production": 2691},
+      {"level": 25, "production": 5418},
+      {"level": 30, "production": 10470}
+    ]
+  },
+  "fusion_reactor": {
+    "base_production": 30,
+    "base_cost": {"metal": 900, "crystal": 360, "deuterium": 180},
+    "energy_factor": 1.05,
+    "cost_factor": 1.8,
+    "test_cases": [
+      {"level": 0, "energy_tech": 0, "production": 0, "deuterium_consumption": 0},
+      {"level": 1, "energy_tech": 0, "production": 32, "deuterium_consumption": -10},
+      {"level": 1, "energy_tech": 5, "production": 42, "deuterium_consumption": -10},
+      {"level": 1, "energy_tech": 10, "production": 49, "deuterium_consumption": -10},
+      {"level": 5, "energy_tech": 0, "production": 203, "deuterium_consumption": -66},
+      {"level": 10, "energy_tech": 0, "production": 490, "deuterium_consumption": -260},
+      {"level": 10, "energy_tech": 5, "production": 625, "deuterium_consumption": -260},
+      {"level": 10, "energy_tech": 10, "production": 780, "deuterium_consumption": -260}
+    ],
+    "formula": "30 * level * (1.05 + energyTechLevel * 0.01)^level"
+  },
+  "solar_satellite": {
+    "base_speed": 0,
+    "test_cases": [
+      {"temp": 100, "count": 1, "energy": 40},
+      {"temp": 100, "count": 10, "energy": 400},
+      {"temp": 100, "count": 100, "energy": 4000},
+      {"temp": 50, "count": 10, "energy": 310},
+      {"temp": 0, "count": 10, "energy": 233},
+      {"temp": -50, "count": 10, "energy": 150},
+      {"temp": -100, "count": 10, "energy": 60},
+      {"temp": -130, "count": 10, "energy": 10}
+    ],
+    "formula": "floor((temp + 140) / 6) * count"
+  },
+  "basic_income": {
+    "description": "Resources received every hour regardless of mine level",
+    "metal": 30,
+    "crystal": 15,
+    "deuterium": 0,
+    "notes": "Not received during vacation mode"
+  },
+  "crawler": {
+    "production_bonus": 0.0002,
+    "description": "0.02% per crawler of each resource",
+    "test_cases": [
+      {"mine_levels_sum": 60, "crawlers": 100, "bonus_percent": 2.0},
+      {"mine_levels_sum": 60, "crawlers": 500, "bonus_percent": 10.0},
+      {"mine_levels_sum": 60, "crawlers": 1000, "bonus_percent": 20.0},
+      {"mine_levels_sum": 60, "crawlers": 2000, "bonus_percent": 40.0},
+      {"mine_levels_sum": 60, "crawlers": 2500, "bonus_percent": 50.0}
+    ],
+    "max_bonus_percent": 50,
+    "active_crawlers_formula": "(metal_mine + crystal_mine + deut_synth) * 8"
+  },
+  "plasma_technology_bonus": {
+    "description": "Plasma technology increases crystal production",
+    "formula": "15 * A + 20 * A * (1 + PT * 0.0066) * C * 1.1^C",
+    "where": {
+      "A": "universe_acceleration",
+      "PT": "plasma_technology_level",
+      "C": "crystal_mine_level"
+    },
+    "test_cases": [
+      {"plasma_level": 0, "crystal_mine": 10, "base_production": 518, "with_plasma": 518},
+      {"plasma_level": 5, "crystal_mine": 10, "base_production": 518, "with_plasma": 689},
+      {"plasma_level": 10, "crystal_mine": 10, "base_production": 518, "with_plasma": 860}
+    ]
+  }
+}

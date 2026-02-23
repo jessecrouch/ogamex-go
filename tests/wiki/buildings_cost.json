@@ -1,0 +1,174 @@
+{
+  "description": "Building cost verification data based on OGame wiki - CORRECTED",
+  "buildings": {
+    "metal_mine": {
+      "base_cost": {"metal": 60, "crystal": 0, "deuterium": 0},
+      "cost_factor": 1.5,
+      "test_cases": [
+        {"level": 1, "metal": 60, "crystal": 0, "deuterium": 0},
+        {"level": 2, "metal": 90, "crystal": 0, "deuterium": 0},
+        {"level": 3, "metal": 135, "crystal": 0, "deuterium": 0},
+        {"level": 5, "metal": 304, "crystal": 0, "deuterium": 0},
+        {"level": 10, "metal": 2307, "crystal": 0, "deuterium": 0},
+        {"level": 15, "metal": 17516, "crystal": 0, "deuterium": 0},
+        {"level": 20, "metal": 133010, "crystal": 0, "deuterium": 0}
+      ]
+    },
+    "crystal_mine": {
+      "base_cost": {"metal": 48, "crystal": 24, "deuterium": 0},
+      "cost_factor": 1.6,
+      "test_cases": [
+        {"level": 1, "metal": 48, "crystal": 24, "deuterium": 0},
+        {"level": 2, "metal": 77, "crystal": 38, "deuterium": 0},
+        {"level": 3, "metal": 123, "crystal": 61, "deuterium": 0},
+        {"level": 5, "metal": 315, "crystal": 157, "deuterium": 0},
+        {"level": 10, "metal": 3299, "crystal": 1649, "deuterium": 0},
+        {"level": 15, "metal": 34588, "crystal": 17294, "deuterium": 0},
+        {"level": 20, "metal": 362678, "crystal": 181339, "deuterium": 0}
+      ]
+    },
+    "deuterium_synthesizer": {
+      "base_cost": {"metal": 225, "crystal": 0, "deuterium": 0},
+      "cost_factor": 1.5,
+      "test_cases": [
+        {"level": 1, "metal": 225, "crystal": 0, "deuterium": 0},
+        {"level": 2, "metal": 338, "crystal": 0, "deuterium": 0},
+        {"level": 3, "metal": 506, "crystal": 0, "deuterium": 0},
+        {"level": 5, "metal": 1139, "crystal": 0, "deuterium": 0},
+        {"level": 10, "metal": 8650, "crystal": 0, "deuterium": 0},
+        {"level": 15, "metal": 65684, "crystal": 0, "deuterium": 0},
+        {"level": 20, "metal": 498789, "crystal": 0, "deuterium": 0}
+      ]
+    },
+    "solar_plant": {
+      "base_cost": {"metal": 75, "crystal": 0, "deuterium": 0},
+      "cost_factor": 1.5,
+      "test_cases": [
+        {"level": 1, "metal": 75, "crystal": 0, "deuterium": 0},
+        {"level": 2, "metal": 112, "crystal": 0, "deuterium": 0},
+        {"level": 3, "metal": 169, "crystal": 0, "deuterium": 0},
+        {"level": 5, "metal": 380, "crystal": 0, "deuterium": 0},
+        {"level": 10, "metal": 2883, "crystal": 0, "deuterium": 0},
+        {"level": 15, "metal": 21895, "crystal": 0, "deuterium": 0},
+        {"level": 20, "metal": 166263, "crystal": 0, "deuterium": 0}
+      ]
+    },
+    "fusion_plant": {
+      "base_cost": {"metal": 900, "crystal": 360, "deuterium": 180},
+      "cost_factor": 1.8,
+      "test_cases": [
+        {"level": 1, "metal": 900, "crystal": 360, "deuterium": 180},
+        {"level": 2, "metal": 1620, "crystal": 648, "deuterium": 324},
+        {"level": 3, "metal": 2916, "crystal": 1166, "deuterium": 583},
+        {"level": 5, "metal": 9448, "crystal": 3779, "deuterium": 1890},
+        {"level": 10, "metal": 178523, "crystal": 71409, "deuterium": 35705},
+        {"level": 15, "metal": 3373320, "crystal": 1349328, "deuterium": 674664},
+        {"level": 20, "metal": 63741181, "crystal": 25496472, "deuterium": 12748236}
+      ]
+    },
+    "robotics_factory": {
+      "base_cost": {"metal": 400, "crystal": 120, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 400, "crystal": 120, "deuterium": 0},
+        {"level": 2, "metal": 800, "crystal": 240, "deuterium": 0},
+        {"level": 3, "metal": 1600, "crystal": 480, "deuterium": 0},
+        {"level": 5, "metal": 6400, "crystal": 1920, "deuterium": 0},
+        {"level": 10, "metal": 204800, "crystal": 61440, "deuterium": 0}
+      ]
+    },
+    "shipyard": {
+      "base_cost": {"metal": 400, "crystal": 200, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 400, "crystal": 200, "deuterium": 0},
+        {"level": 2, "metal": 800, "crystal": 400, "deuterium": 0},
+        {"level": 3, "metal": 1600, "crystal": 800, "deuterium": 0},
+        {"level": 5, "metal": 6400, "crystal": 3200, "deuterium": 0},
+        {"level": 10, "metal": 204800, "crystal": 102400, "deuterium": 0}
+      ]
+    },
+    "research_lab": {
+      "base_cost": {"metal": 200, "crystal": 400, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 200, "crystal": 400, "deuterium": 0},
+        {"level": 2, "metal": 400, "crystal": 800, "deuterium": 0},
+        {"level": 3, "metal": 800, "crystal": 1600, "deuterium": 0},
+        {"level": 5, "metal": 3200, "crystal": 6400, "deuterium": 0},
+        {"level": 10, "metal": 102400, "crystal": 204800, "deuterium": 0}
+      ]
+    },
+    "metal_storage": {
+      "base_cost": {"metal": 100, "crystal": 0, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 100, "crystal": 0, "deuterium": 0},
+        {"level": 2, "metal": 200, "crystal": 0, "deuterium": 0},
+        {"level": 3, "metal": 400, "crystal": 0, "deuterium": 0},
+        {"level": 5, "metal": 1600, "crystal": 0, "deuterium": 0},
+        {"level": 10, "metal": 51200, "crystal": 0, "deuterium": 0}
+      ]
+    },
+    "crystal_storage": {
+      "base_cost": {"metal": 100, "crystal": 50, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 100, "crystal": 50, "deuterium": 0},
+        {"level": 2, "metal": 200, "crystal": 100, "deuterium": 0},
+        {"level": 3, "metal": 400, "crystal": 200, "deuterium": 0},
+        {"level": 5, "metal": 1600, "crystal": 800, "deuterium": 0},
+        {"level": 10, "metal": 51200, "crystal": 25600, "deuterium": 0}
+      ]
+    },
+    "deuterium_storage": {
+      "base_cost": {"metal": 100, "crystal": 100, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 100, "crystal": 100, "deuterium": 0},
+        {"level": 2, "metal": 200, "crystal": 200, "deuterium": 0},
+        {"level": 3, "metal": 400, "crystal": 400, "deuterium": 0},
+        {"level": 5, "metal": 1600, "crystal": 1600, "deuterium": 0},
+        {"level": 10, "metal": 51200, "crystal": 51200, "deuterium": 0}
+      ]
+    },
+    "nanite_factory": {
+      "base_cost": {"metal": 1000000, "crystal": 200000, "deuterium": 0},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 1000000, "crystal": 200000, "deuterium": 0},
+        {"level": 2, "metal": 2000000, "crystal": 400000, "deuterium": 0},
+        {"level": 3, "metal": 4000000, "crystal": 800000, "deuterium": 0},
+        {"level": 5, "metal": 16000000, "crystal": 3200000, "deuterium": 0}
+      ]
+    },
+    "terraformer": {
+      "base_cost": {"metal": 50000, "crystal": 100000, "deuterium": 1000000},
+      "cost_factor": 2.0,
+      "test_cases": [
+        {"level": 1, "metal": 50000, "crystal": 100000, "deuterium": 1000000},
+        {"level": 2, "metal": 100000, "crystal": 200000, "deuterium": 2000000},
+        {"level": 3, "metal": 200000, "crystal": 400000, "deuterium": 4000000},
+        {"level": 5, "metal": 800000, "crystal": 1600000, "deuterium": 16000000}
+      ]
+    }
+  },
+  "storage_capacity": {
+    "base_capacity": 10000,
+    "base_cost_factor": 2.0,
+    "test_cases": [
+      {"level": 1, "capacity": 20000},
+      {"level": 2, "capacity": 40000},
+      {"level": 3, "capacity": 80000},
+      {"level": 5, "capacity": 320000},
+      {"level": 10, "capacity": 10240000}
+    ]
+  },
+  "construction_time": {
+    "test_cases": [
+      {"building": "robotics_factory", "level": 1, "factor": 1.0},
+      {"building": "robotics_factory", "level": 2, "factor": 1.0},
+      {"building": "shipyard", "level": 1, "factor": 1.0}
+    ]
+  }
+}

@@ -20,6 +20,9 @@ const (
 	BuildingNaniteFactory
 	BuildingTerraformer
 	BuildingMissileSilo
+	BuildingRoboticsFactory
+	BuildingShipyard
+	BuildingResearchLab
 )
 
 type BuildingQueueItem struct {

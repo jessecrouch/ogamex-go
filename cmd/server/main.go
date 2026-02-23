@@ -74,7 +74,7 @@ func main() {
 	productionService := service.NewProductionService(planetRepo, techRepo, economySpeed)
 	authService := service.NewAuthService(userRepo, planetRepo)
 
-	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService)
+	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, planetRepo, buildingQueueRepo, researchQueueRepo)
 	sched.Start()
 
 	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService)

@@ -46,13 +46,13 @@ func (r *fleetMissionRepository) GetByUserID(ctx context.Context, userID uint) (
 
 func (r *fleetMissionRepository) GetActive(ctx context.Context) ([]*schema.FleetMission, error) {
 	var missions []*schema.FleetMission
-	err := r.db.WithContext(ctx).Where("mission_status IN ?", []int{1, 2}).Find(&missions).Error
+	err := r.db.WithContext(ctx).Where("status IN ?", []int{1, 2}).Find(&missions).Error
 	return missions, err
 }
 
 func (r *fleetMissionRepository) GetArriving(ctx context.Context, before interface{}) ([]*schema.FleetMission, error) {
 	var missions []*schema.FleetMission
-	query := r.db.WithContext(ctx).Where("mission_status = ?", 1)
+	query := r.db.WithContext(ctx).Where("status = ?", 1)
 	
 	switch t := before.(type) {
 	case time.Time:

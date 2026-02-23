@@ -56,6 +56,24 @@ func (r *buildingQueueRepository) GetCurrent(ctx context.Context, planetID uint)
 	return &queue, nil
 }
 
+func (r *buildingQueueRepository) GetCompleted(ctx context.Context, planetID uint) ([]*schema.BuildingQueue, error) {
+	var queues []*schema.BuildingQueue
+	err := r.db.WithContext(ctx).
+		Where("planet_id = ? AND is_cancelled = ? AND end_time <= ?", planetID, false, time.Now()).
+		Order("start_time ASC").
+		Find(&queues).Error
+	return queues, err
+}
+
+func (r *buildingQueueRepository) GetAllWithActive(ctx context.Context) ([]*schema.BuildingQueue, error) {
+	var queues []*schema.BuildingQueue
+	err := r.db.WithContext(ctx).
+		Where("is_cancelled = ?", false).
+		Order("start_time ASC").
+		Find(&queues).Error
+	return queues, err
+}
+
 func (r *buildingQueueRepository) Update(ctx context.Context, queue *schema.BuildingQueue) error {
 	return r.db.WithContext(ctx).Save(queue).Error
 }
@@ -114,6 +132,14 @@ func (r *researchQueueRepository) GetCurrent(ctx context.Context, userID uint) (
 		return nil, err
 	}
 	return &queue, nil
+}
+
+func (r *researchQueueRepository) GetAllWithActive(ctx context.Context) ([]*schema.ResearchQueue, error) {
+	var queues []*schema.ResearchQueue
+	err := r.db.WithContext(ctx).
+		Order("start_time ASC").
+		Find(&queues).Error
+	return queues, err
 }
 
 func (r *researchQueueRepository) Update(ctx context.Context, queue *schema.ResearchQueue) error {

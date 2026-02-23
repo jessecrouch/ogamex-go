@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -42,18 +43,48 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	api.Post("/auth/register", h.Register)
 	api.Post("/auth/login", h.Login)
 
-	api.Get("/planets/:id", h.GetPlanet)
-	api.Get("/planets/:id/resources", h.GetPlanetResources)
-	api.Get("/planets/:id/buildings", h.GetPlanetBuildings)
-	api.Post("/planets/:id/buildings/:building_id", h.StartBuilding)
-	api.Get("/planets/:id/queue", h.GetBuildingQueue)
-	api.Delete("/queue/:id", h.CancelBuilding)
+	protected := api.Group("", h.authMiddleware)
 
-	api.Post("/research/start", h.StartResearch)
-	api.Get("/research/queue", h.GetResearchQueue)
+	protected.Get("/planets/:id", h.GetPlanet)
+	protected.Get("/planets/:id/resources", h.GetPlanetResources)
+	protected.Get("/planets/:id/buildings", h.GetPlanetBuildings)
+	protected.Post("/planets/:id/buildings/:building_id", h.StartBuilding)
+	protected.Get("/planets/:id/queue", h.GetBuildingQueue)
+	protected.Delete("/queue/:id", h.CancelBuilding)
 
-	api.Post("/fleets/send", h.SendFleet)
-	api.Get("/fleets", h.GetFleets)
+	protected.Post("/research/start", h.StartResearch)
+	protected.Get("/research/queue", h.GetResearchQueue)
+
+	protected.Post("/fleets/send", h.SendFleet)
+	protected.Get("/fleets", h.GetFleets)
+}
+
+func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(401).JSON(fiber.Map{"error": "authorization required"})
+	}
+
+	parts := []string{}
+	for _, p := range strings.Split(authHeader, " ") {
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid authorization format"})
+	}
+
+	token := parts[1]
+	user, err := h.authService.ValidateToken(c.Context(), token)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid token"})
+	}
+
+	c.Locals("user_id", user.ID)
+	c.Locals("user", user)
+
+	return c.Next()
 }
 
 func (h *Handlers) GetStatus(c *fiber.Ctx) error {
@@ -234,9 +265,13 @@ func (h *Handlers) CancelBuilding(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) StartResearch(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
 	type ResearchRequest struct {
-		UserID     uint `json:"user_id"`
-		ResearchID int  `json:"research_id"`
+		ResearchID int `json:"research_id"`
 	}
 
 	var req ResearchRequest
@@ -244,30 +279,25 @@ func (h *Handlers) StartResearch(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
 	}
 
-	err := h.researchService.StartResearch(c.Context(), req.UserID, req.ResearchID)
+	err := h.researchService.StartResearch(c.Context(), userID, req.ResearchID)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
 		"success":      true,
-		"user_id":      req.UserID,
+		"user_id":      userID,
 		"research_id":  req.ResearchID,
 	})
 }
 
 func (h *Handlers) GetResearchQueue(c *fiber.Ctx) error {
-	userIDStr := c.Query("user_id")
-	if userIDStr == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "user_id required"})
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
 	}
 
-	userID, err := strconv.ParseUint(userIDStr, 10, 64)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "invalid user_id"})
-	}
-
-	queue, err := h.researchService.GetQueue(c.Context(), uint(userID))
+	queue, err := h.researchService.GetQueue(c.Context(), userID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -298,7 +328,6 @@ func (h *Handlers) GetResearchQueue(c *fiber.Ctx) error {
 }
 
 type FleetRequest struct {
-	UserID         uint   `json:"user_id"`
 	MissionType    int    `json:"mission_type"`
 	OriginGalaxy   int    `json:"origin_galaxy"`
 	OriginSystem   int    `json:"origin_system"`
@@ -315,12 +344,17 @@ type FleetRequest struct {
 }
 
 func (h *Handlers) SendFleet(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
 	var req FleetRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
 	}
 
-	origin, err := h.planetRepo.GetByCoords(c.Context(), req.UserID, req.OriginGalaxy, req.OriginSystem, req.OriginPosition)
+	origin, err := h.planetRepo.GetByCoords(c.Context(), userID, req.OriginGalaxy, req.OriginSystem, req.OriginPosition)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "origin planet not found"})
 	}
@@ -348,7 +382,7 @@ func (h *Handlers) SendFleet(c *fiber.Ctx) error {
 	params.Resources.Deuterium = req.Resources.Deuterium
 	params.Ships = ships
 
-	err = h.fleetService.SendFleet(c.Context(), req.UserID, params)
+	err = h.fleetService.SendFleet(c.Context(), userID, params)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -359,17 +393,12 @@ func (h *Handlers) SendFleet(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) GetFleets(c *fiber.Ctx) error {
-	userIDStr := c.Query("user_id")
-	if userIDStr == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "user_id required"})
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
 	}
 
-	userID, err := strconv.ParseUint(userIDStr, 10, 64)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "invalid user_id"})
-	}
-
-	fleets, err := h.fleetService.GetActiveMissions(c.Context(), uint(userID))
+	fleets, err := h.fleetService.GetActiveMissions(c.Context(), userID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}

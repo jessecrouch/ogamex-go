@@ -50,6 +50,8 @@ type BuildingQueueRepository interface {
 	GetByID(ctx context.Context, id uint) (*schema.BuildingQueue, error)
 	GetByPlanetID(ctx context.Context, planetID uint) ([]*schema.BuildingQueue, error)
 	GetCurrent(ctx context.Context, planetID uint) (*schema.BuildingQueue, error)
+	GetCompleted(ctx context.Context, planetID uint) ([]*schema.BuildingQueue, error)
+	GetAllWithActive(ctx context.Context) ([]*schema.BuildingQueue, error)
 	Update(ctx context.Context, queue *schema.BuildingQueue) error
 	Delete(ctx context.Context, id uint) error
 	Cancel(ctx context.Context, id uint) error
@@ -60,6 +62,7 @@ type ResearchQueueRepository interface {
 	GetByID(ctx context.Context, id uint) (*schema.ResearchQueue, error)
 	GetByUserID(ctx context.Context, userID uint) ([]*schema.ResearchQueue, error)
 	GetCurrent(ctx context.Context, userID uint) (*schema.ResearchQueue, error)
+	GetAllWithActive(ctx context.Context) ([]*schema.ResearchQueue, error)
 	Update(ctx context.Context, queue *schema.ResearchQueue) error
 	Delete(ctx context.Context, id uint) error
 	Cancel(ctx context.Context, id uint) error

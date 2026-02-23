@@ -2,10 +2,12 @@ package scheduler
 
 import (
 	"context"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
 
+	"ogamex-go/internal/repository"
 	"ogamex-go/internal/service"
 )
 
@@ -15,6 +17,9 @@ type Scheduler struct {
 	researchService    *service.ResearchService
 	fleetService       *service.FleetService
 	productionService  *service.ProductionService
+	planetRepo        repository.PlanetRepository
+	buildingQueueRepo repository.BuildingQueueRepository
+	researchQueueRepo repository.ResearchQueueRepository
 }
 
 func NewScheduler(
@@ -22,13 +27,19 @@ func NewScheduler(
 	researchService *service.ResearchService,
 	fleetService *service.FleetService,
 	productionService *service.ProductionService,
+	planetRepo repository.PlanetRepository,
+	buildingQueueRepo repository.BuildingQueueRepository,
+	researchQueueRepo repository.ResearchQueueRepository,
 ) *Scheduler {
 	return &Scheduler{
-		cron:              cron.New(),
-		buildingService:   buildingService,
-		researchService:   researchService,
-		fleetService:      fleetService,
-		productionService: productionService,
+		cron:                cron.New(),
+		buildingService:     buildingService,
+		researchService:     researchService,
+		fleetService:        fleetService,
+		productionService:   productionService,
+		planetRepo:         planetRepo,
+		buildingQueueRepo:   buildingQueueRepo,
+		researchQueueRepo:   researchQueueRepo,
 	}
 }
 
@@ -56,10 +67,48 @@ func (s *Scheduler) processQueues() {
 
 func (s *Scheduler) processBuildingQueues(ctx context.Context) {
 	log.Debug().Msg("Processing building queues")
+	
+	queues, err := s.buildingQueueRepo.GetAllWithActive(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get building queues")
+		return
+	}
+	
+	for _, queue := range queues {
+		if time.Now().Before(queue.EndTime) {
+			continue
+		}
+		
+		err = s.buildingService.CompleteBuilding(ctx, queue.ID)
+		if err != nil {
+			log.Debug().Err(err).Uint("queue_id", queue.ID).Msg("Failed to complete building")
+		} else {
+			log.Info().Uint("planet_id", queue.PlanetID).Int("building_id", queue.BuildingID).Int("level", queue.Level).Msg("Building completed")
+		}
+	}
 }
 
 func (s *Scheduler) processResearchQueues(ctx context.Context) {
 	log.Debug().Msg("Processing research queues")
+	
+	queues, err := s.researchQueueRepo.GetAllWithActive(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get research queues")
+		return
+	}
+	
+	for _, queue := range queues {
+		if time.Now().Before(queue.EndTime) {
+			continue
+		}
+		
+		err = s.researchService.CompleteResearch(ctx, queue.ID)
+		if err != nil {
+			log.Debug().Err(err).Uint("queue_id", queue.ID).Msg("Failed to complete research")
+		} else {
+			log.Info().Uint("user_id", queue.UserID).Int("research_id", queue.ResearchID).Int("level", queue.Level).Msg("Research completed")
+		}
+	}
 }
 
 func (s *Scheduler) processFleets() {

@@ -54,6 +54,7 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Post("/planets/:id/buildings/:building_id", h.StartBuilding)
 	protected.Get("/planets/:id/queue", h.GetBuildingQueue)
 	protected.Delete("/queue/:id", h.CancelBuilding)
+	protected.Get("/planets/:id/overview", h.GetPlanetOverview)
 
 	protected.Post("/research/start", h.StartResearch)
 	protected.Get("/research/queue", h.GetResearchQueue)
@@ -173,6 +174,48 @@ func (h *Handlers) GetPlanet(c *fiber.Ctx) error {
 		"system":   planet.System,
 		"position": planet.Position,
 		"is_moon":  planet.IsMoon,
+	})
+}
+
+func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	queue, _ := h.buildingService.GetQueue(c.Context(), uint(planetID))
+	
+	hasQueue := len(queue) > 0
+
+	return c.JSON(fiber.Map{
+		"planet_id":     planet.ID,
+		"name":          planet.Name,
+		"resources": fiber.Map{
+			"metal":      planet.Metal,
+			"crystal":    planet.Crystal,
+			"deuterium":  planet.Deuterium,
+			"energy":     planet.EnergyAvailable,
+		},
+		"production": fiber.Map{
+			"metal":      planet.MetalProduction,
+			"crystal":    planet.CrystalProduction,
+			"deuterium":  planet.DeuteriumProduction,
+		},
+		"buildings": fiber.Map{
+			"metal_mine":     planet.MetalMine,
+			"crystal_mine":  planet.CrystalMine,
+			"deuterium_synth": planet.DeuteriumSynthesizer,
+			"solar_plant":    planet.SolarPlant,
+			"fusion_plant":   planet.FusionPlant,
+		},
+		"has_queue":     hasQueue,
+		"fields_used":   planet.FieldsUsed,
+		"fields_max":    planet.FieldsMax,
 	})
 }
 

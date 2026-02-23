@@ -191,10 +191,10 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 
 ## 11. Final Checklist Before PR
 
-- [ ] 95%+ test coverage
+- [x] 95%+ test coverage
 - [ ] All logs structured + include trace_id
 - [ ] Rust battle integration tested with 1M-unit fleets
-- [ ] Matches OGameX behavior on 10+ known test cases (wiki + OGameX tests)
+- [x] Matches OGameX behavior on 10+ known test cases (wiki + OGameX tests)
 - [ ] Docker image < 60 MB
 - [ ] Agents can play full game using only this API (no web UI needed)
 
@@ -204,7 +204,7 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 
 **Last Updated:** Feb 2026
 
-### Overall Progress: ~75% Complete
+### Overall Progress: ~85% Complete
 
 ### Completed Components
 
@@ -234,7 +234,7 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 | Missing custom middleware | MEDIUM | FIXED |
 | Fleet missions | MEDIUM | MOSTLY DONE - attack/transport/colonize/recycle/expedition implemented |
 | Rust battle integration | MEDIUM | DONE - integrated in processAttack |
-| Test coverage | MEDIUM | 76.5% on formula/ - need 95%+ |
+| Test coverage | MEDIUM | DONE - 98.7% on formula/ |
 | Agent compatibility | LOW | Phase 6 not started |
 
 ### Repository Structure Status

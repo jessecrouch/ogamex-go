@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 )
 
@@ -34,6 +35,16 @@ func Init(production bool) {
 
 func With() zerolog.Context {
 	return Log.With()
+}
+
+func WithTraceID(c *fiber.Ctx) zerolog.Logger {
+	traceID := ""
+	if c != nil {
+		if id, ok := c.Locals("trace_id").(string); ok {
+			traceID = id
+		}
+	}
+	return Log.With().Str("trace_id", traceID).Logger()
 }
 
 func Info() *zerolog.Event {

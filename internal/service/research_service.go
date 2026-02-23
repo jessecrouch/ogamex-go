@@ -5,16 +5,17 @@ import (
 	"errors"
 	"time"
 
+	"ogamex-go/internal/domain"
 	"ogamex-go/internal/formula"
 	"ogamex-go/internal/repository"
 	"ogamex-go/internal/schema"
 )
 
 type ResearchService struct {
-	userRepo       repository.UserRepository
-	planetRepo     repository.PlanetRepository
-	researchQueue  repository.ResearchQueueRepository
-	techRepo       repository.UserTechRepository
+	userRepo      repository.UserRepository
+	planetRepo    repository.PlanetRepository
+	researchQueue repository.ResearchQueueRepository
+	techRepo      repository.UserTechRepository
 }
 
 func NewResearchService(
@@ -38,40 +39,37 @@ type ResearchCost struct {
 }
 
 func (s *ResearchService) GetResearchCost(researchID int, level int) ResearchCost {
-	baseCost := s.getBaseCost(researchID)
-	factor := formula.GetCostFactor(level, 1.8)
-
+	metal, crystal, deuterium := formula.CalculateResearchCost(s.intToResearchType(researchID), level)
 	return ResearchCost{
-		Metal:     int64(float64(baseCost.Metal) * factor),
-		Crystal:   int64(float64(baseCost.Crystal) * factor),
-		Deuterium: int64(float64(baseCost.Deuterium) * factor),
+		Metal:     metal,
+		Crystal:   crystal,
+		Deuterium: deuterium,
 	}
 }
 
-func (s *ResearchService) getBaseCost(researchID int) ResearchCost {
-	costs := map[int]ResearchCost{
-		1:  {Metal: 0, Crystal: 800, Deuterium: 400},    // Energy
-		2:  {Metal: 200, Crystal: 600, Deuterium: 0},    // Laser
-		3:  {Metal: 1000, Crystal: 300, Deuterium: 0},   // Ion
-		4:  {Metal: 4000, Crystal: 2000, Deuterium: 1000}, // Hyperspace
-		5:  {Metal: 2400, Crystal: 1200, Deuterium: 600}, // Plasma
-		6:  {Metal: 9000, Crystal: 4000, Deuterium: 6000}, // Fusion
-		7:  {Metal: 4000, Crystal: 2000, Deuterium: 600}, // Impulse
-		8:  {Metal: 10000, Crystal: 6000, Deuterium: 4000}, // Hyperspace Drive
-		9:  {Metal: 200, Crystal: 1000, Deuterium: 200},  // Espionage
-		10: {Metal: 100, Crystal: 400, Deuterium: 200},   // Computer
-		11: {Metal: 8000, Crystal: 4000, Deuterium: 2000}, // Astrophysics
-		12: {Metal: 240000, Crystal: 160000, Deuterium: 80000}, // IGR
-		13: {Metal: 100000, Crystal: 50000, Deuterium: 50000}, // Graviton
-		14: {Metal: 800, Crystal: 200, Deuterium: 0},       // Weapons
-		15: {Metal: 400, Crystal: 600, Deuterium: 0},       // Shielding
-		16: {Metal: 400, Crystal: 200, Deuterium: 0},        // Armor
+func (s *ResearchService) intToResearchType(researchID int) domain.ResearchType {
+	mapping := map[int]domain.ResearchType{
+		1:  domain.ResearchEnergyTechnology,
+		2:  domain.ResearchLaserTechnology,
+		3:  domain.ResearchIonTechnology,
+		4:  domain.ResearchHyperspaceTechnology,
+		5:  domain.ResearchPlasmaTechnology,
+		6:  domain.ResearchFusionDrive,
+		7:  domain.ResearchImpulseDrive,
+		8:  domain.ResearchHyperspaceDrive,
+		9:  domain.ResearchEspionageTechnology,
+		10: domain.ResearchComputerTechnology,
+		11: domain.ResearchAstrophysics,
+		12: domain.ResearchIntergalacticResearchNetwork,
+		13: domain.ResearchGravitonTechnology,
+		14: domain.ResearchWeaponsTechnology,
+		15: domain.ResearchShieldingTechnology,
+		16: domain.ResearchArmorTechnology,
 	}
-
-	if cost, ok := costs[researchID]; ok {
-		return cost
+	if rt, ok := mapping[researchID]; ok {
+		return rt
 	}
-	return ResearchCost{}
+	return domain.ResearchType(researchID)
 }
 
 func (s *ResearchService) StartResearch(ctx context.Context, userID uint, researchID int) error {

@@ -23,6 +23,9 @@ const (
 	BuildingRoboticsFactory
 	BuildingShipyard
 	BuildingResearchLab
+	BuildingLunarBase
+	BuildingSensorPhalanx
+	BuildingJumpGate
 )
 
 type BuildingQueueItem struct {

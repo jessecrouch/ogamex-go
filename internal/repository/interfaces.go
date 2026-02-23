@@ -42,6 +42,7 @@ type FleetMissionRepository interface {
 	GetByUserID(ctx context.Context, userID uint) ([]*schema.FleetMission, error)
 	GetActive(ctx context.Context) ([]*schema.FleetMission, error)
 	GetArriving(ctx context.Context, before interface{}) ([]*schema.FleetMission, error)
+	GetReturning(ctx context.Context, before interface{}) ([]*schema.FleetMission, error)
 	Update(ctx context.Context, mission *schema.FleetMission) error
 	Delete(ctx context.Context, id uint) error
 }

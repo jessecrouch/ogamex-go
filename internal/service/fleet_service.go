@@ -206,8 +206,31 @@ func (s *FleetService) GetActiveMissions(ctx context.Context, userID uint) ([]*s
 	return s.fleetRepo.GetByUserID(ctx, userID)
 }
 
+func (s *FleetService) RecallFleet(ctx context.Context, missionID uint) error {
+	mission, err := s.fleetRepo.GetByID(ctx, missionID)
+	if err != nil {
+		return ErrFleetNotFound
+	}
+
+	if mission.Status != 0 {
+		return errors.New("fleet already returned or mission completed")
+	}
+
+	now := time.Now()
+	if now.After(mission.ArrivalTime) {
+		return errors.New("fleet already arrived")
+	}
+
+	remainingTime := mission.ArrivalTime.Sub(now)
+	mission.ReturnTime = now.Add(remainingTime)
+	mission.Status = 3
+
+	return s.fleetRepo.Update(ctx, mission)
+}
+
 func (s *FleetService) ProcessArrivingMissions(ctx context.Context) error {
 	now := time.Now()
+	
 	missions, err := s.fleetRepo.GetArriving(ctx, now)
 	if err != nil {
 		return err
@@ -217,10 +240,23 @@ func (s *FleetService) ProcessArrivingMissions(ctx context.Context) error {
 		s.processMission(ctx, mission)
 	}
 
+	returningMissions, err := s.fleetRepo.GetReturning(ctx, now)
+	if err != nil {
+		return err
+	}
+
+	for _, mission := range returningMissions {
+		s.processMission(ctx, mission)
+	}
+
 	return nil
 }
 
 func (s *FleetService) processMission(ctx context.Context, mission *schema.FleetMission) error {
+	if mission.Status == 3 {
+		return s.processRecall(ctx, mission)
+	}
+
 	switch mission.MissionType {
 	case 1: // Attack
 		return s.processAttack(ctx, mission)
@@ -238,8 +274,69 @@ func (s *FleetService) processMission(ctx context.Context, mission *schema.Fleet
 		return s.processExpedition(ctx, mission)
 	}
 
-	mission.Status = 1
+	mission.Status = 2
 	return s.fleetRepo.Update(ctx, mission)
+}
+
+func (s *FleetService) processRecall(ctx context.Context, mission *schema.FleetMission) error {
+	origin, err := s.planetRepo.GetByCoords(ctx, mission.UserID, mission.OriginGalaxy, mission.OriginSystem, mission.OriginPosition)
+	if err != nil {
+		return err
+	}
+
+	err = s.planetRepo.AddResources(ctx, origin.ID, mission.Metal, mission.Crystal, mission.Deuterium)
+	if err != nil {
+		return err
+	}
+
+	ships := make(map[int]int)
+	json.Unmarshal([]byte(mission.Ships), &ships)
+	s.addShipsToPlanet(ctx, origin, ships)
+
+	mission.Status = 2
+	return s.fleetRepo.Update(ctx, mission)
+}
+
+func (s *FleetService) addShipsToPlanet(ctx context.Context, planet *schema.Planet, ships map[int]int) {
+	for shipID, count := range ships {
+		switch shipID {
+		case 202:
+			planet.SmallCargo += count
+		case 203:
+			planet.LargeCargo += count
+		case 204:
+			planet.LightFighter += count
+		case 205:
+			planet.HeavyFighter += count
+		case 206:
+			planet.Cruiser += count
+		case 207:
+			planet.Battleship += count
+		case 208:
+			planet.ColonyShip += count
+		case 209:
+			planet.Recycler += count
+		case 210:
+			planet.EspionageProbe += count
+		case 211:
+			planet.Bomber += count
+		case 212:
+			planet.SolarSatellite += count
+		case 213:
+			planet.Destroyer += count
+		case 214:
+			planet.Deathstar += count
+		case 215:
+			planet.Battlecruiser += count
+		case 217:
+			planet.Crawler += count
+		case 218:
+			planet.Reaper += count
+		case 219:
+			planet.Pathfinder += count
+		}
+	}
+	s.planetRepo.Update(ctx, planet)
 }
 
 func (s *FleetService) processTransport(ctx context.Context, mission *schema.FleetMission) error {

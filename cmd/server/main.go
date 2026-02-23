@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 
 	"ogamex-go/internal/api"
+	"ogamex-go/internal/api/middleware"
 	"ogamex-go/internal/database"
 	appLogger "ogamex-go/internal/logger"
 	"ogamex-go/internal/repository"
@@ -93,7 +94,21 @@ func main() {
 	})
 
 	app.Use(recover.New())
-	app.Use(logger.New())
+	app.Use(middleware.TraceIDMiddleware())
+	app.Use(logger.New(logger.Config{
+		Format: "${time} | ${status} | ${latency} | ${trace_id} | ${method} ${path} ${error}\n",
+		CustomTags: map[string]logger.LogFunc{
+			"trace_id": func(output logger.Buffer, c *fiber.Ctx, data *logger.Data, extraParam string) (int, error) {
+				traceID := c.Get("X-Trace-ID")
+				if traceID == "" {
+					if id, ok := c.Locals("trace_id").(string); ok {
+						traceID = id
+					}
+				}
+				return output.WriteString(traceID)
+			},
+		},
+	}))
 
 	rateLimit := limiter.New(limiter.Config{
 		Max:        100,

@@ -14,10 +14,11 @@ type ErrorResponse struct {
 }
 
 func HandleError(c *fiber.Ctx, status int, message string, err error) error {
+	log := appLogger.WithTraceID(c)
 	if err != nil {
-		appLogger.Error().Err(err).Int("status", status).Str("path", c.Path()).Msg(message)
+		log.Error().Err(err).Int("status", status).Str("path", c.Path()).Msg(message)
 	} else {
-		appLogger.Warn().Int("status", status).Str("path", c.Path()).Msg(message)
+		log.Warn().Int("status", status).Str("path", c.Path()).Msg(message)
 	}
 
 	if status == 429 {

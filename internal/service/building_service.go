@@ -5,24 +5,25 @@ import (
 	"errors"
 	"time"
 
+	"ogamex-go/internal/domain"
 	"ogamex-go/internal/formula"
 	"ogamex-go/internal/repository"
 	"ogamex-go/internal/schema"
 )
 
 var (
-	ErrBuildingNotFound    = errors.New("building not found")
-	ErrInsufficientFunds   = errors.New("insufficient resources")
+	ErrBuildingNotFound     = errors.New("building not found")
+	ErrInsufficientFunds    = errors.New("insufficient resources")
 	ErrBuildingNotAvailable = errors.New("building not available on this planet")
-	ErrQueueFull          = errors.New("building queue is full")
-	ErrTechNotFound       = errors.New("technology not found")
-	ErrLabBusy            = errors.New("research lab is busy")
+	ErrQueueFull           = errors.New("building queue is full")
+	ErrTechNotFound        = errors.New("technology not found")
+	ErrLabBusy             = errors.New("research lab is busy")
 )
 
 type BuildingService struct {
-	planetRepo     repository.PlanetRepository
-	buildingQueue  repository.BuildingQueueRepository
-	techRepo       repository.UserTechRepository
+	planetRepo    repository.PlanetRepository
+	buildingQueue repository.BuildingQueueRepository
+	techRepo      repository.UserTechRepository
 }
 
 func NewBuildingService(
@@ -45,46 +46,50 @@ type BuildingCost struct {
 }
 
 func (s *BuildingService) GetBuildingCost(buildingID int, level int) BuildingCost {
-	baseCost := s.getBaseCost(buildingID)
-	factor := s.getCostFactor(buildingID)
-	
-	multiplier := formula.GetCostFactor(level, factor)
-	
+	buildingType := s.intToBuildingType(buildingID)
+	metal, crystal, deuterium := formula.CalculateBuildingCost(buildingType, level)
 	return BuildingCost{
-		Metal:     int64(float64(baseCost.Metal) * multiplier),
-		Crystal:   int64(float64(baseCost.Crystal) * multiplier),
-		Deuterium: int64(float64(baseCost.Deuterium) * multiplier),
+		Metal:     metal,
+		Crystal:   crystal,
+		Deuterium: deuterium,
 	}
 }
 
-func (s *BuildingService) getBaseCost(buildingID int) BuildingCost {
-	costs := map[int]BuildingCost{
-		1:  {Metal: 60, Crystal: 15, Deuterium: 0},    // Metal Mine
-		2:  {Metal: 48, Crystal: 24, Deuterium: 0},   // Crystal Mine
-		3:  {Metal: 225, Crystal: 75, Deuterium: 0},  // Deuterium Synthesizer
-		4:  {Metal: 75, Crystal: 30, Deuterium: 0},   // Solar Plant
-		12: {Metal: 900, Crystal: 360, Deuterium: 180}, // Fusion Plant
+func (s *BuildingService) intToBuildingType(buildingID int) domain.BuildingType {
+	mapping := map[int]domain.BuildingType{
+		1:  domain.BuildingMetalMine,
+		2:  domain.BuildingCrystalMine,
+		3:  domain.BuildingDeuteriumSynthesizer,
+		4:  domain.BuildingSolarPlant,
+		5:  domain.BuildingFusionPlant,
+		6:  domain.BuildingMetalStorage,
+		7:  domain.BuildingCrystalStorage,
+		8:  domain.BuildingDeuteriumStorage,
+		14: domain.BuildingMetalMine2,
+		15: domain.BuildingCrystalMine2,
+		16: domain.BuildingDeuteriumSynthesizer2,
+		17: domain.BuildingSolarSatellite,
+		18: domain.BuildingCrawler,
+		19: domain.BuildingSpaceDock,
+		20: domain.BuildingNaniteFactory,
+		21: domain.BuildingTerraformer,
+		22: domain.BuildingMissileSilo,
+		23: domain.BuildingRoboticsFactory,
+		24: domain.BuildingShipyard,
+		25: domain.BuildingResearchLab,
+		31: domain.BuildingResearchLab,
+		33: domain.BuildingNaniteFactory,
+		36: domain.BuildingSpaceDock,
+		41: domain.BuildingLunarBase,
+		42: domain.BuildingSensorPhalanx,
+		43: domain.BuildingTerraformer,
+		44: domain.BuildingMissileSilo,
+		45: domain.BuildingJumpGate,
 	}
-	
-	if cost, ok := costs[buildingID]; ok {
-		return cost
+	if bt, ok := mapping[buildingID]; ok {
+		return bt
 	}
-	return BuildingCost{}
-}
-
-func (s *BuildingService) getCostFactor(buildingID int) float64 {
-	factors := map[int]float64{
-		1:  1.5,
-		2:  1.6,
-		3:  1.5,
-		4:  1.5,
-		12: 1.8,
-	}
-	
-	if factor, ok := factors[buildingID]; ok {
-		return factor
-	}
-	return 1.5
+	return domain.BuildingType(buildingID)
 }
 
 func (s *BuildingService) StartBuilding(ctx context.Context, planetID uint, buildingID int, level int) error {
@@ -206,30 +211,60 @@ func (s *BuildingService) CompleteBuilding(ctx context.Context, queueID uint) er
 }
 
 func (s *BuildingService) calculateFieldsUsed(planet *schema.Planet) int {
-	fields := map[int]int{
-		planet.MetalMine:           1,
-		planet.CrystalMine:         1,
-		planet.DeuteriumSynthesizer: 1,
-		planet.SolarPlant:          1,
-		planet.FusionPlant:         1,
-		planet.MetalStorageBuilding:   1,
-		planet.CrystalStorageBuilding: 1,
-		planet.DeuteriumStorageBuilding: 1,
-		planet.RobotFactory:        1,
-		planet.Shipyard:            1,
-		planet.ResearchLab:         1,
-		planet.MissileSilo:         1,
-		planet.NaniteFactory:       1,
-		planet.Terraformer:         1,
-		planet.SpaceDock:           1,
-		planet.LunarBase:           1,
-		planet.SensorPhalanx:       1,
-		planet.JumpGate:            1,
-	}
-
 	total := 0
-	for _, f := range fields {
-		total += f
+	if planet.MetalMine > 0 {
+		total++
+	}
+	if planet.CrystalMine > 0 {
+		total++
+	}
+	if planet.DeuteriumSynthesizer > 0 {
+		total++
+	}
+	if planet.SolarPlant > 0 {
+		total++
+	}
+	if planet.FusionPlant > 0 {
+		total++
+	}
+	if planet.MetalStorageBuilding > 0 {
+		total++
+	}
+	if planet.CrystalStorageBuilding > 0 {
+		total++
+	}
+	if planet.DeuteriumStorageBuilding > 0 {
+		total++
+	}
+	if planet.RobotFactory > 0 {
+		total++
+	}
+	if planet.Shipyard > 0 {
+		total++
+	}
+	if planet.ResearchLab > 0 {
+		total++
+	}
+	if planet.MissileSilo > 0 {
+		total++
+	}
+	if planet.NaniteFactory > 0 {
+		total++
+	}
+	if planet.Terraformer > 0 {
+		total++
+	}
+	if planet.SpaceDock > 0 {
+		total++
+	}
+	if planet.LunarBase > 0 {
+		total++
+	}
+	if planet.SensorPhalanx > 0 {
+		total++
+	}
+	if planet.JumpGate > 0 {
+		total++
 	}
 	return total
 }

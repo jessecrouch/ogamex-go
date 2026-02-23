@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"ogamex-go/internal/domain"
+	"ogamex-go/internal/formula"
 	"ogamex-go/internal/repository"
 	"ogamex-go/internal/schema"
 )
@@ -26,56 +28,44 @@ func NewUnitService(
 	}
 }
 
-var shipyardUnits = map[int]struct {
-	Metal     int64
-	Crystal   int64
-	Deuterium int64
-	BuildTime time.Duration
-}{
-	202: {2000, 2000, 0, 5 * time.Second},   // Small Cargo
-	203: {6000, 6000, 0, 8 * time.Second},   // Large Cargo
-	204: {10000, 6000, 2000, 20 * time.Second}, // Light Fighter
-	205: {25000, 15000, 5000, 40 * time.Second}, // Heavy Fighter
-	206: {10000, 20000, 10000, 10 * time.Second}, // Cruiser
-	207: {50000, 25000, 15000, 80 * time.Second}, // Battleship
-	208: {10000, 10000, 0, 50 * time.Second}, // Colony Ship
-	209: {10000, 6000, 2000, 15 * time.Second}, // Recycler
-	210: {0, 1000, 0, 30 * time.Second},       // Espionage Probe
-	211: {50000, 50000, 25000, 200 * time.Second}, // Bomber
-	212: {0, 2000, 500, 3 * time.Second},     // Solar Satellite
-	213: {10000, 10000, 0, 30 * time.Second}, // Destroyer
-	214: {100000, 100000, 50000, 400 * time.Second}, // Deathstar
-	215: {3000, 1000, 0, 4 * time.Second},     // Battlecruiser
-	217: {2000, 2000, 1000, 10 * time.Second}, // Crawler
-	218: {8000, 0, 0, 20 * time.Second},      // Reaper
-	219: {20000, 10000, 10000, 75 * time.Second}, // Pathfinder
-}
-
-var defenseUnits = map[int]struct {
-	Metal     int64
-	Crystal   int64
-	Deuterium int64
-	BuildTime time.Duration
-}{
-	401: {2000, 0, 0, 10 * time.Second},      // Rocket Launcher
-	402: {1500, 500, 0, 11 * time.Second},    // Light Laser
-	403: {6000, 2000, 0, 22 * time.Second},   // Heavy Laser
-	404: {2000, 6000, 0, 16 * time.Second},   // Ion Cannon
-	405: {20000, 15000, 2000, 45 * time.Second}, // Gauss Cannon
-	406: {50000, 50000, 30000, 90 * time.Second}, // Plasma Turret
-	407: {10000, 10000, 0, 20 * time.Second}, // Shield Dome (Large Shield)
-	408: {8000, 2000, 0, 15 * time.Second},  // Missile Interceptor
-	409: {15000, 5000, 0, 20 * time.Second},  // Missile Launcher
+func (s *UnitService) intToUnitType(unitID int) domain.UnitType {
+	mapping := map[int]domain.UnitType{
+		202: domain.UnitSmallCargo,
+		203: domain.UnitLargeCargo,
+		204: domain.UnitLightFighter,
+		205: domain.UnitHeavyFighter,
+		206: domain.UnitCruiser,
+		207: domain.UnitBattleship,
+		215: domain.UnitBattlecruiser,
+		211: domain.UnitBomber,
+		213: domain.UnitDestroyer,
+		214: domain.UnitDeathstar,
+		209: domain.UnitRecycler,
+		210: domain.UnitEspionageProbe,
+		212: domain.UnitSolarSatellite,
+		217: domain.UnitCrawler,
+		208: domain.UnitColonyShip,
+		218: domain.UnitReaper,
+		219: domain.UnitPathfinder,
+		401: domain.UnitRocketLauncher,
+		402: domain.UnitLightLaser,
+		403: domain.UnitHeavyLaser,
+		405: domain.UnitGaussCannon,
+		404: domain.UnitIonCannon,
+		406: domain.UnitPlasmaTurret,
+		407: domain.UnitSmallShieldDome,
+		408: domain.UnitAntiBallisticMissiles,
+		409: domain.UnitInterplanetaryMissiles,
+	}
+	if ut, ok := mapping[unitID]; ok {
+		return ut
+	}
+	return domain.UnitType(unitID)
 }
 
 func (s *UnitService) GetUnitCost(unitID int) (metal, crystal, deuterium int64, buildTime time.Duration) {
-	if unit, ok := shipyardUnits[unitID]; ok {
-		return unit.Metal, unit.Crystal, unit.Deuterium, unit.BuildTime
-	}
-	if unit, ok := defenseUnits[unitID]; ok {
-		return unit.Metal, unit.Crystal, unit.Deuterium, unit.BuildTime
-	}
-	return 0, 0, 0, 0
+	metal, crystal, deuterium, seconds := formula.CalculateUnitCost(s.intToUnitType(unitID))
+	return metal, crystal, deuterium, time.Duration(seconds) * time.Second
 }
 
 func (s *UnitService) BuildUnit(ctx context.Context, planetID uint, unitID int, amount int) error {
@@ -241,17 +231,18 @@ func (s *UnitService) CancelQueue(ctx context.Context, queueID uint) error {
 }
 
 func (s *UnitService) IsShipUnit(unitID int) bool {
-	_, ok := shipyardUnits[unitID]
-	return ok
+	unitType := s.intToUnitType(unitID)
+	return unitType.IsShip()
 }
 
 func (s *UnitService) IsDefenseUnit(unitID int) bool {
-	_, ok := defenseUnits[unitID]
-	return ok
+	unitType := s.intToUnitType(unitID)
+	return unitType.IsDefense()
 }
 
 func (s *UnitService) IsValidUnit(unitID int) bool {
-	return s.IsShipUnit(unitID) || s.IsDefenseUnit(unitID)
+	unitType := s.intToUnitType(unitID)
+	return unitType.IsShip() || unitType.IsDefense()
 }
 
 var (

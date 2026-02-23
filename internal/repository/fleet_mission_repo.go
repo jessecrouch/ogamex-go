@@ -52,13 +52,28 @@ func (r *fleetMissionRepository) GetActive(ctx context.Context) ([]*schema.Fleet
 
 func (r *fleetMissionRepository) GetArriving(ctx context.Context, before interface{}) ([]*schema.FleetMission, error) {
 	var missions []*schema.FleetMission
-	query := r.db.WithContext(ctx).Where("status = ?", 1)
+	query := r.db.WithContext(ctx).Where("status = ?", 0)
 	
 	switch t := before.(type) {
 	case time.Time:
 		query = query.Where("arrival_time <= ?", t)
 	case int64:
 		query = query.Where("arrival_time <= ?", time.Unix(t, 0))
+	}
+	
+	err := query.Find(&missions).Error
+	return missions, err
+}
+
+func (r *fleetMissionRepository) GetReturning(ctx context.Context, before interface{}) ([]*schema.FleetMission, error) {
+	var missions []*schema.FleetMission
+	query := r.db.WithContext(ctx).Where("status = ?", 3)
+	
+	switch t := before.(type) {
+	case time.Time:
+		query = query.Where("return_time <= ?", t)
+	case int64:
+		query = query.Where("return_time <= ?", time.Unix(t, 0))
 	}
 	
 	err := query.Find(&missions).Error

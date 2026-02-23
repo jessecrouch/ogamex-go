@@ -40,6 +40,9 @@ var buildingBaseCosts = map[domain.BuildingType]BuildingBaseCost{
 	domain.BuildingMetalMine2:          {Metal: 60, Crystal: 30, Deuterium: 0, CostFactor: 1.5},
 	domain.BuildingCrystalMine2:        {Metal: 48, Crystal: 24, Deuterium: 0, CostFactor: 1.6},
 	domain.BuildingDeuteriumSynthesizer2: {Metal: 225, Crystal: 0, Deuterium: 0, CostFactor: 1.5},
+	domain.BuildingLunarBase:           {Metal: 20000, Crystal: 40000, Deuterium: 20000, CostFactor: 2.0},
+	domain.BuildingSensorPhalanx:       {Metal: 20000, Crystal: 40000, Deuterium: 20000, CostFactor: 2.0},
+	domain.BuildingJumpGate:            {Metal: 2000000, Crystal: 4000000, Deuterium: 2000000, CostFactor: 2.0},
 }
 
 func CalculateBuildingCost(buildingType domain.BuildingType, level int) (metal, crystal, deuterium int64) {

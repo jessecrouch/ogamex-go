@@ -100,6 +100,51 @@ func (s *ProductionService) calculateDeuteriumProduction(planet *schema.Planet, 
 	return int64(float64(baseProd) * float64(s.economySpeed))
 }
 
+func (s *ProductionService) CalculateProductionForType(planet *schema.Planet, tech *schema.UserTech, resourceType string) int64 {
+	result := s.CalculateProductionFull(planet, tech)
+	switch resourceType {
+	case "metal":
+		return result.Metal
+	case "crystal":
+		return result.Crystal
+	case "deuterium":
+		return result.Deuterium
+	}
+	return 0
+}
+
+func (s *ProductionService) CalculateEnergy(planet *schema.Planet, tech *schema.UserTech) int64 {
+	result := s.CalculateProductionFull(planet, tech)
+	return result.Energy
+}
+
+func (s *ProductionService) CalculateProductionFull(planet *schema.Planet, tech *schema.UserTech) ProductionResult {
+	energyAvailable := s.calculateEnergyProduction(planet, tech)
+	energyUsed := s.calculateEnergyUsage(planet)
+
+	netEnergy := energyAvailable + energyUsed
+
+	production := ProductionResult{
+		Energy: netEnergy,
+	}
+
+	if netEnergy < 0 {
+		deficitFactor := 1.0 + float64(netEnergy)/200.0
+		if deficitFactor < 0.5 {
+			deficitFactor = 0.5
+		}
+		production.Metal = int64(float64(s.calculateMetalProduction(planet, tech)) * deficitFactor)
+		production.Crystal = int64(float64(s.calculateCrystalProduction(planet, tech)) * deficitFactor)
+		production.Deuterium = int64(float64(s.calculateDeuteriumProduction(planet, tech)) * deficitFactor)
+	} else {
+		production.Metal = s.calculateMetalProduction(planet, tech)
+		production.Crystal = s.calculateCrystalProduction(planet, tech)
+		production.Deuterium = s.calculateDeuteriumProduction(planet, tech)
+	}
+
+	return production
+}
+
 func (s *ProductionService) UpdatePlanetResources(ctx context.Context, planetID uint) error {
 	planet, err := s.planetRepo.GetByID(ctx, planetID)
 	if err != nil {

@@ -14,12 +14,13 @@ import (
 )
 
 type Handlers struct {
-	buildingService *service.BuildingService
-	researchService *service.ResearchService
-	fleetService    *service.FleetService
-	planetRepo      repository.PlanetRepository
-	authService     *service.AuthService
-	unitService     *service.UnitService
+	buildingService  *service.BuildingService
+	researchService  *service.ResearchService
+	fleetService     *service.FleetService
+	planetRepo       repository.PlanetRepository
+	authService      *service.AuthService
+	unitService      *service.UnitService
+	productionService *service.ProductionService
 }
 
 func NewHandlers(
@@ -29,14 +30,16 @@ func NewHandlers(
 	planetRepo repository.PlanetRepository,
 	authService *service.AuthService,
 	unitService *service.UnitService,
+	productionService *service.ProductionService,
 ) *Handlers {
 	return &Handlers{
-		buildingService: buildingService,
-		researchService: researchService,
-		fleetService:    fleetService,
-		planetRepo:      planetRepo,
-		authService:     authService,
-		unitService:     unitService,
+		buildingService:  buildingService,
+		researchService:  researchService,
+		fleetService:     fleetService,
+		planetRepo:       planetRepo,
+		authService:      authService,
+		unitService:      unitService,
+		productionService: productionService,
 	}
 }
 
@@ -63,9 +66,11 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 
 	protected.Post("/research/start", h.StartResearch)
 	protected.Get("/research/queue", h.GetResearchQueue)
+	protected.Delete("/research/queue/:id", h.CancelResearch)
 
 	protected.Post("/fleets/send", h.SendFleet)
 	protected.Get("/fleets", h.GetFleets)
+	protected.Post("/fleets/:id/recall", h.RecallFleet)
 
 	protected.Post("/planets/:id/units/build", h.BuildUnit)
 	protected.Get("/planets/:id/units/queue", h.GetUnitQueue)
@@ -73,6 +78,7 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Get("/units/available", h.GetAvailableUnits)
 	protected.Get("/planets/:id/units", h.GetPlanetShips)
 	protected.Get("/planets/:id/defense", h.GetPlanetDefense)
+	protected.Get("/planets/:id/production", h.GetPlanetProduction)
 }
 
 func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
@@ -580,6 +586,50 @@ func (h *Handlers) GetFleets(c *fiber.Ctx) error {
 	})
 }
 
+func (h *Handlers) RecallFleet(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	fleetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid fleet id"})
+	}
+
+	err = h.fleetService.RecallFleet(c.Context(), uint(fleetID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":  true,
+		"fleet_id": fleetID,
+	})
+}
+
+func (h *Handlers) CancelResearch(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	queueID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid queue id"})
+	}
+
+	err = h.researchService.CancelResearch(c.Context(), uint(queueID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":  true,
+		"queue_id": queueID,
+	})
+}
+
 type RegisterRequest struct {
 	Username   string `json:"username"`
 	Email      string `json:"email"`
@@ -853,6 +903,38 @@ func (h *Handlers) GetPlanetDefense(c *fiber.Ctx) error {
 			"shield_dome":         planet.ShieldDome,
 			"missile_interceptor": planet.MissileInterceptor,
 			"missile_launcher":    planet.MissileLauncher,
+		},
+	})
+}
+
+func (h *Handlers) GetPlanetProduction(c *fiber.Ctx) error {
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	tech, _ := h.researchService.GetTech(c.Context(), planet.UserID)
+
+	metalProd := h.productionService.CalculateProductionForType(planet, tech, "metal")
+	crystalProd := h.productionService.CalculateProductionForType(planet, tech, "crystal")
+	deuteriumProd := h.productionService.CalculateProductionForType(planet, tech, "deuterium")
+	energyProd := h.productionService.CalculateEnergy(planet, tech)
+
+	return c.JSON(fiber.Map{
+		"planet_id": planet.ID,
+		"production": fiber.Map{
+			"metal":      metalProd,
+			"crystal":    crystalProd,
+			"deuterium":  deuteriumProd,
+			"energy":     energyProd,
+		},
+		"consumption": fiber.Map{
+			"energy": planet.EnergyUsed,
 		},
 	})
 }

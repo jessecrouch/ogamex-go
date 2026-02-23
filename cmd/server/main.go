@@ -87,7 +87,7 @@ func main() {
 	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, unitService, planetRepo, buildingQueueRepo, researchQueueRepo, unitQueueRepo)
 	sched.Start()
 
-	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService)
+	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService)
 
 	app := fiber.New(fiber.Config{
 		AppName: "ogamex-go",

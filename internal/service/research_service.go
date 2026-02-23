@@ -242,3 +242,29 @@ func (s *ResearchService) CompleteResearch(ctx context.Context, queueID uint) er
 func (s *ResearchService) GetQueue(ctx context.Context, userID uint) ([]*schema.ResearchQueue, error) {
 	return s.researchQueue.GetByUserID(ctx, userID)
 }
+
+func (s *ResearchService) CancelResearch(ctx context.Context, queueID uint) error {
+	queue, err := s.researchQueue.GetByID(ctx, queueID)
+	if err != nil {
+		return err
+	}
+
+	refund := s.GetResearchCost(queue.ResearchID, queue.Level)
+	refund.Metal /= 2
+	refund.Crystal /= 2
+	refund.Deuterium /= 2
+
+	planets, _ := s.planetRepo.GetByUserID(ctx, queue.UserID)
+	for _, p := range planets {
+		if p.ResearchLab > 0 {
+			_ = s.planetRepo.AddResources(ctx, p.ID, refund.Metal, refund.Crystal, refund.Deuterium)
+			break
+		}
+	}
+
+	return s.researchQueue.Delete(ctx, queueID)
+}
+
+func (s *ResearchService) GetTech(ctx context.Context, userID uint) (*schema.UserTech, error) {
+	return s.techRepo.GetByUserID(ctx, userID)
+}

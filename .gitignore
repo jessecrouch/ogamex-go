@@ -1,0 +1,4 @@
+ogamex-go
+*.exe
+.env
+*.log

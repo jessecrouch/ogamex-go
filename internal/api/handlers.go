@@ -32,6 +32,7 @@ type Handlers struct {
 	npcService       *service.NPCService
 	acsService       *service.ACSService
 	premiumService   *service.PremiumService
+	characterClassService *service.CharacterClassService
 }
 
 func NewHandlers(
@@ -53,6 +54,7 @@ func NewHandlers(
 	npcService *service.NPCService,
 	acsService *service.ACSService,
 	premiumService *service.PremiumService,
+	characterClassService *service.CharacterClassService,
 ) *Handlers {
 	return &Handlers{
 		buildingService:   buildingService,
@@ -73,6 +75,7 @@ func NewHandlers(
 		npcService:       npcService,
 		acsService:       acsService,
 		premiumService:   premiumService,
+		characterClassService: characterClassService,
 	}
 }
 
@@ -90,6 +93,8 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Get("/user/stats", h.GetUserStats)
 	protected.Get("/planets", h.GetUserPlanets)
 	protected.Get("/planets/:id", h.GetPlanet)
+	protected.Get("/planets/:id/details", h.GetPlanetDetails)
+	protected.Put("/planets/:id/set-current", h.SetCurrentPlanet)
 	protected.Get("/planets/:id/resources", h.GetPlanetResources)
 	protected.Get("/planets/:id/buildings", h.GetPlanetBuildings)
 	protected.Post("/planets/:id/buildings/:building_id", h.StartBuilding)
@@ -181,6 +186,9 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Post("/premium/activate", h.ActivatePremium)
 	protected.Post("/merchant/buy", h.MerchantBuy)
 	protected.Post("/merchant/sell", h.MerchantSell)
+
+	protected.Get("/character-class", h.GetCharacterClass)
+	protected.Post("/character-class/select", h.SelectCharacterClass)
 
 	protected.Post("/planets/:id/move", h.MovePlanet)
 }
@@ -331,6 +339,70 @@ func (h *Handlers) GetPlanet(c *fiber.Ctx) error {
 		"position": planet.Position,
 		"is_moon":  planet.IsMoon,
 	})
+}
+
+func (h *Handlers) GetPlanetDetails(c *fiber.Ctx) error {
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	return c.JSON(fiber.Map{
+		"id":              planet.ID,
+		"name":            planet.Name,
+		"galaxy":          planet.Galaxy,
+		"system":          planet.System,
+		"position":        planet.Position,
+		"is_moon":         planet.IsMoon,
+		"planet_type":     planet.PlanetType,
+		"metal":           planet.Metal,
+		"crystal":         planet.Crystal,
+		"deuterium":       planet.Deuterium,
+		"metal_capacity":  planet.MetalCapacity,
+		"crystal_capacity": planet.CrystalCapacity,
+		"deuterium_capacity": planet.DeuteriumCapacity,
+		"energy_available": planet.EnergyAvailable,
+		"energy_max":      planet.EnergyMax,
+		"energy_used":     planet.EnergyUsed,
+		"fields_used":     planet.FieldsUsed,
+		"fields_max":      planet.FieldsMax,
+		"temp_min":        planet.TempMin,
+		"temp_max":        planet.TempMax,
+		"defense_activated": planet.DefenseActivated,
+	})
+}
+
+func (h *Handlers) SetCurrentPlanet(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	planetID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet id"})
+	}
+
+	planet, err := h.planetRepo.GetByID(c.Context(), uint(planetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "planet not found"})
+	}
+
+	if planet.UserID != userID {
+		return c.Status(403).JSON(fiber.Map{"error": "planet does not belong to user"})
+	}
+
+	err = h.authService.SetCurrentPlanet(c.Context(), userID, uint(planetID))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "current_planet_id": planetID})
 }
 
 func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
@@ -2145,4 +2217,50 @@ func (h *Handlers) MovePlanet(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"success": true, "data": planet})
+}
+
+func (h *Handlers) GetCharacterClass(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	classID, err := h.characterClassService.GetCharacterClass(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	classes := service.GetAllCharacterClasses()
+	var currentClass service.CharacterClassInfo
+	for _, c := range classes {
+		if c.ID == classID {
+			currentClass = c
+			break
+		}
+	}
+
+	return c.JSON(fiber.Map{
+		"character_class": classID,
+		"class_info":      currentClass,
+		"available_classes": classes,
+	})
+}
+
+func (h *Handlers) SelectCharacterClass(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	classID, err := strconv.Atoi(c.FormValue("class_id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid class_id"})
+	}
+
+	err = h.characterClassService.SetCharacterClass(c.Context(), userID, classID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "character_class": classID})
 }

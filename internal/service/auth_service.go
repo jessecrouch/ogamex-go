@@ -200,3 +200,22 @@ func (s *AuthService) GetVacationStatus(ctx context.Context, userID uint) (bool,
 
 	return user.OnVacation, user.VacationEndTime, nil
 }
+
+func (s *AuthService) SetCurrentPlanet(ctx context.Context, userID, planetID uint) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	planet, err := s.planetRepo.GetByID(ctx, planetID)
+	if err != nil {
+		return errors.New("planet not found")
+	}
+
+	if planet.UserID != userID {
+		return errors.New("planet does not belong to user")
+	}
+
+	user.CurrentPlanetID = &planetID
+	return s.userRepo.Update(ctx, user)
+}

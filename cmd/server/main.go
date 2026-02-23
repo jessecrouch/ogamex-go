@@ -102,11 +102,12 @@ func main() {
 	acsRepo := repository.NewACSRepository(db)
 	acsService := service.NewACSService(acsRepo, fleetMissionRepo, userRepo, planetRepo)
 	premiumService := service.NewPremiumService(userRepo, planetRepo)
+	characterClassService := service.NewCharacterClassService(userRepo)
 
 	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, unitService, planetRepo, buildingQueueRepo, researchQueueRepo, unitQueueRepo)
 	sched.Start()
 
-	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService, messageService, planetService, noteService, allianceService, buddyService, moonService, espionageService, debrisService, npcService, acsService, premiumService)
+	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService, messageService, planetService, noteService, allianceService, buddyService, moonService, espionageService, debrisService, npcService, acsService, premiumService, characterClassService)
 
 	app := fiber.New(fiber.Config{
 		AppName: "ogamex-go",

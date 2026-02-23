@@ -18,6 +18,7 @@ type User struct {
 	AuthToken       string         `gorm:"size:64;uniqueIndex" json:"auth_token,omitempty"`
 	CharacterClass  int           `gorm:"default:0" json:"character_class"`
 	DarkMatter      int64          `gorm:"default:0" json:"dark_matter"`
+	DMHolding       *int64         `json:"dm_holding"`
 	CurrentPlanetID *uint          `json:"current_planet_id"`
 	OnVacation      bool           `gorm:"default:false" json:"on_vacation"`
 	VacationEndTime *time.Time     `json:"vacation_end_time"`

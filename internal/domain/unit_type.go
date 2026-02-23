@@ -17,6 +17,7 @@ const (
 	UnitEspionageProbe
 	UnitSolarSatellite
 	UnitCrawler
+	UnitColonyShip
 	UnitReaper
 	UnitPathfinder
 	UnitRocketLauncher
@@ -73,6 +74,8 @@ func (u UnitType) String() string {
 		return "Solar Satellite"
 	case UnitCrawler:
 		return "Crawler"
+	case UnitColonyShip:
+		return "Colony Ship"
 	case UnitReaper:
 		return "Reaper"
 	case UnitPathfinder:

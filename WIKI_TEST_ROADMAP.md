@@ -378,7 +378,7 @@ go test -v -run "Wiki" ./... 2>&1 | grep -A5 "DISCREPANCY"
 |-------|----------|--------|-------|---------------|
 | 1 | Resource Production | DONE (with known diffs) | ~100 | ~70 (expected - uses Ceil) |
 | 2 | Building Costs | DONE | ~70 | 1 (solar plant rounding) |
-| 3 | Ship Statistics | TODO | 0 | 0 |
+| 3 | Ship Statistics | DONE | ~80 | 2 (speed upgrade formula) |
 | 4 | Defense Statistics | TODO | 0 | 0 |
 | 5 | Research Technology | TODO | 0 | 0 |
 | 6 | Fleet Mechanics | TODO | 0 | 0 |

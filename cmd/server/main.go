@@ -85,12 +85,28 @@ func main() {
 	unitService := service.NewUnitService(planetRepo, unitQueueRepo, techRepo)
 	messageRepo := repository.NewMessageRepository(db)
 	messageService := service.NewMessageService(messageRepo, userRepo)
-	planetService := service.NewPlanetService(planetRepo)
+	noteRepo := repository.NewNoteRepository(db)
+	noteService := service.NewNoteService(noteRepo, planetRepo)
+	planetService := service.NewPlanetService(planetRepo, userRepo)
+	allianceRepo := repository.NewAllianceRepository(db)
+	allianceService := service.NewAllianceService(allianceRepo, userRepo, planetRepo)
+	buddyRepo := repository.NewBuddyRepository(db)
+	buddyService := service.NewBuddyService(buddyRepo, userRepo)
+	moonService := service.NewMoonService(planetRepo, fleetMissionRepo, userRepo)
+	espionageRepo := repository.NewEspionageRepository(db)
+	espionageService := service.NewEspionageService(espionageRepo, planetRepo, userRepo, messageRepo)
+	debrisRepo := repository.NewDebrisRepository(db)
+	wreckRepo := repository.NewWreckRepository(db)
+	debrisService := service.NewDebrisService(debrisRepo, wreckRepo, planetRepo)
+	npcService := service.NewNPCService(userRepo, planetRepo, fleetMissionRepo)
+	acsRepo := repository.NewACSRepository(db)
+	acsService := service.NewACSService(acsRepo, fleetMissionRepo, userRepo, planetRepo)
+	premiumService := service.NewPremiumService(userRepo, planetRepo)
 
 	sched := scheduler.NewScheduler(buildingService, researchService, fleetService, productionService, unitService, planetRepo, buildingQueueRepo, researchQueueRepo, unitQueueRepo)
 	sched.Start()
 
-	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService, messageService, planetService)
+	handlers := api.NewHandlers(buildingService, researchService, fleetService, planetRepo, authService, unitService, productionService, messageService, planetService, noteService, allianceService, buddyService, moonService, espionageService, debrisService, npcService, acsService, premiumService)
 
 	app := fiber.New(fiber.Config{
 		AppName: "ogamex-go",

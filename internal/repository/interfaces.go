@@ -12,6 +12,7 @@ type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*schema.User, error)
 	GetByEmail(ctx context.Context, email string) (*schema.User, error)
 	GetByAuthToken(ctx context.Context, token string) (*schema.User, error)
+	GetNPCUsers(ctx context.Context) ([]*schema.User, error)
 	Update(ctx context.Context, user *schema.User) error
 	Delete(ctx context.Context, id uint) error
 	List(ctx context.Context, limit, offset int) ([]*schema.User, error)
@@ -90,4 +91,78 @@ type MessageRepository interface {
 	MarkAllAsRead(ctx context.Context, userID uint) error
 	Delete(ctx context.Context, id uint) error
 	DeleteAll(ctx context.Context, userID uint) error
+}
+
+type NoteRepository interface {
+	Create(ctx context.Context, note *schema.Note) error
+	GetByID(ctx context.Context, id uint) (*schema.Note, error)
+	GetByUserID(ctx context.Context, userID uint) ([]*schema.Note, error)
+	Update(ctx context.Context, note *schema.Note) error
+	Delete(ctx context.Context, id uint) error
+}
+
+type AllianceRepository interface {
+	Create(ctx context.Context, alliance *schema.Alliance) error
+	GetByID(ctx context.Context, id uint) (*schema.Alliance, error)
+	GetByTag(ctx context.Context, tag string) (*schema.Alliance, error)
+	GetByName(ctx context.Context, name string) (*schema.Alliance, error)
+	GetAll(ctx context.Context) ([]*schema.Alliance, error)
+	Update(ctx context.Context, alliance *schema.Alliance) error
+	Delete(ctx context.Context, id uint) error
+	AddMember(ctx context.Context, member *schema.AllianceMember) error
+	GetMembers(ctx context.Context, allianceID uint) ([]*schema.AllianceMember, error)
+	GetMember(ctx context.Context, allianceID, userID uint) (*schema.AllianceMember, error)
+	RemoveMember(ctx context.Context, allianceID, userID uint) error
+	CreateApplication(ctx context.Context, app *schema.AllianceApplication) error
+	GetApplication(ctx context.Context, allianceID, userID uint) (*schema.AllianceApplication, error)
+	GetApplications(ctx context.Context, allianceID uint) ([]*schema.AllianceApplication, error)
+	UpdateApplication(ctx context.Context, app *schema.AllianceApplication) error
+	DeleteApplication(ctx context.Context, id uint) error
+}
+
+type BuddyRepository interface {
+	Create(ctx context.Context, buddy *schema.Buddy) error
+	GetByID(ctx context.Context, id uint) (*schema.Buddy, error)
+	GetByUserID(ctx context.Context, userID uint) ([]*schema.Buddy, error)
+	GetPendingReceived(ctx context.Context, userID uint) ([]*schema.Buddy, error)
+	GetPendingSent(ctx context.Context, userID uint) ([]*schema.Buddy, error)
+	GetPendingRequest(ctx context.Context, senderID, receiverID uint) (*schema.Buddy, error)
+	Update(ctx context.Context, buddy *schema.Buddy) error
+	Delete(ctx context.Context, id uint) error
+	DeleteByUserIDs(ctx context.Context, userID1, userID2 uint) error
+}
+
+type EspionageRepository interface {
+	Create(ctx context.Context, report *schema.EspionageReport) error
+	GetByID(ctx context.Context, id uint) (*schema.EspionageReport, error)
+	GetByUserID(ctx context.Context, userID uint, limit, offset int) ([]*schema.EspionageReport, error)
+	GetUnreadCount(ctx context.Context, userID uint) (int64, error)
+	MarkAsRead(ctx context.Context, id uint) error
+	MarkAllAsRead(ctx context.Context, userID uint) error
+	Delete(ctx context.Context, id uint) error
+	DeleteAll(ctx context.Context, userID uint) error
+}
+
+type DebrisRepository interface {
+	Create(ctx context.Context, debris *schema.DebrisField) error
+	GetByID(ctx context.Context, id uint) (*schema.DebrisField, error)
+	GetByCoords(ctx context.Context, galaxy, system, position int) (*schema.DebrisField, error)
+	GetAll(ctx context.Context) ([]*schema.DebrisField, error)
+	GetActive(ctx context.Context) ([]*schema.DebrisField, error)
+	Update(ctx context.Context, debris *schema.DebrisField) error
+	Delete(ctx context.Context, id uint) error
+	DeleteExpired(ctx context.Context) error
+	AddResources(ctx context.Context, galaxy, system, position int, metal, crystal int64) error
+}
+
+type WreckRepository interface {
+	Create(ctx context.Context, wreck *schema.WreckField) error
+	GetByID(ctx context.Context, id uint) (*schema.WreckField, error)
+	GetByCoords(ctx context.Context, galaxy, system, position int) (*schema.WreckField, error)
+	GetAll(ctx context.Context) ([]*schema.WreckField, error)
+	GetActive(ctx context.Context) ([]*schema.WreckField, error)
+	Update(ctx context.Context, wreck *schema.WreckField) error
+	Delete(ctx context.Context, id uint) error
+	DeleteExpired(ctx context.Context) error
+	CreateOrUpdate(ctx context.Context, galaxy, system, position int, metal, crystal, deuterium int64) error
 }

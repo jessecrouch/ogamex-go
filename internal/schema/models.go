@@ -20,8 +20,11 @@ type User struct {
 	DarkMatter      int64          `gorm:"default:0" json:"dark_matter"`
 	CurrentPlanetID *uint          `json:"current_planet_id"`
 	OnVacation      bool           `gorm:"default:false" json:"on_vacation"`
-	LastOnline     time.Time      `json:"last_online"`
+	VacationEndTime *time.Time     `json:"vacation_end_time"`
+	PremiumEndsAt  *time.Time     `json:"premium_ends_at"`
+	LastOnline      time.Time      `json:"last_online"`
 	RegisteredAt    time.Time      `json:"registered_at"`
+	IsNPC           bool           `gorm:"default:false" json:"is_npc"`
 }
 
 func (User) TableName() string {
@@ -117,6 +120,8 @@ type Planet struct {
 	MissileInterceptor int         `json:"missile_interceptor"`
 	MissileLauncher int            `json:"missile_launcher"`
 
+	DefenseActivated bool          `gorm:"default:false" json:"defense_activated"`
+
 	RapidfireFrom   string         `json:"rapidfire_from"`
 	RapidfireTo     string         `json:"rapidfire_to"`
 }
@@ -178,6 +183,20 @@ func (FleetMission) TableName() string {
 	return "fleet_missions"
 }
 
+type ACS struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	TargetGalaxy   int         `json:"target_galaxy"`
+	TargetSystem   int         `json:"target_system"`
+	TargetPosition int        `json:"target_position"`
+	ArrivalTime    time.Time   `json:"arrival_time"`
+	FleetIDs       []uint      `gorm:"-" json:"fleet_ids"`
+	CreatedAt      time.Time   `json:"created_at"`
+}
+
+func (ACS) TableName() string {
+	return "acs_fleets"
+}
+
 type BuildingQueue struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
 	PlanetID    uint           `gorm:"index" json:"planet_id"`
@@ -232,4 +251,131 @@ type Message struct {
 
 func (Message) TableName() string {
 	return "messages"
+}
+
+type Note struct {
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	UserID     uint           `gorm:"index" json:"user_id"`
+	Galaxy     int            `json:"galaxy"`
+	System     int            `json:"system"`
+	Position   int            `json:"position"`
+	Type       int            `json:"type"`
+	Subject    string         `gorm:"size:100" json:"subject"`
+	Text       string         `gorm:"type:text" json:"text"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+}
+
+func (Note) TableName() string {
+	return "notes"
+}
+
+type Alliance struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	Name        string         `gorm:"size:50;uniqueIndex" json:"name"`
+	Tag         string         `gorm:"size:10;uniqueIndex" json:"tag"`
+	FounderID   uint           `json:"founder_id"`
+	Description string         `gorm:"type:text" json:"description"`
+	Logo        string         `gorm:"size:50" json:"logo"`
+	Website     string         `gorm:"size:100" json:"website"`
+	ApplicationText string     `gorm:"type:text" json:"application_text"`
+}
+
+func (Alliance) TableName() string {
+	return "alliances"
+}
+
+type AllianceMember struct {
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	AllianceID uint           `gorm:"index" json:"alliance_id"`
+	UserID     uint           `gorm:"uniqueIndex" json:"user_id"`
+	Rank       string         `gorm:"size:30;default:'Member'" json:"rank"`
+	JoinedAt   time.Time      `json:"joined_at"`
+}
+
+func (AllianceMember) TableName() string {
+	return "alliance_members"
+}
+
+type AllianceApplication struct {
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	AllianceID uint           `gorm:"index" json:"alliance_id"`
+	UserID     uint           `gorm:"index" json:"user_id"`
+	Message    string         `gorm:"type:text" json:"message"`
+	Status     string         `gorm:"size:20;default:'pending'" json:"status"`
+	CreatedAt  time.Time      `json:"created_at"`
+}
+
+func (AllianceApplication) TableName() string {
+	return "alliance_applications"
+}
+
+type Buddy struct {
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	SenderID   uint           `gorm:"index" json:"sender_id"`
+	ReceiverID uint           `gorm:"index" json:"receiver_id"`
+	Message    string         `gorm:"type:text" json:"message"`
+	Status     string         `gorm:"size:20;default:'pending'" json:"status"`
+	CreatedAt  time.Time      `json:"created_at"`
+}
+
+func (Buddy) TableName() string {
+	return "buddy_requests"
+}
+
+type EspionageReport struct {
+	ID            uint           `gorm:"primaryKey" json:"id"`
+	UserID        uint           `gorm:"index" json:"user_id"`
+	TargetUserID  uint           `gorm:"index" json:"target_user_id"`
+	TargetPlanetID uint          `json:"target_planet_id"`
+	Galaxy        int            `json:"galaxy"`
+	System        int            `json:"system"`
+	Position      int            `json:"position"`
+	ReportType    string         `gorm:"size:20" json:"report_type"`
+	Metal         int64          `json:"metal"`
+	Crystal       int64          `json:"crystal"`
+	Deuterium    int64          `json:"deuterium"`
+	Energy        int64          `json:"energy"`
+	Ships         string         `gorm:"type:text" json:"ships"`
+	Defense       string         `gorm:"type:text" json:"defense"`
+	Buildings     string         `gorm:"type:text" json:"buildings"`
+	Read          bool           `gorm:"default:false" json:"read"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+func (EspionageReport) TableName() string {
+	return "espionage_reports"
+}
+
+type DebrisField struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	Galaxy    int            `gorm:"index" json:"galaxy"`
+	System    int            `gorm:"index" json:"system"`
+	Position  int            `gorm:"index" json:"position"`
+	Metal     int64          `json:"metal"`
+	Crystal   int64          `json:"crystal"`
+	CreatedAt time.Time      `json:"created_at"`
+	ExpiresAt time.Time      `json:"expires_at"`
+}
+
+func (DebrisField) TableName() string {
+	return "debris_fields"
+}
+
+type WreckField struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	Galaxy    int            `gorm:"index" json:"galaxy"`
+	System    int            `gorm:"index" json:"system"`
+	Position  int            `gorm:"index" json:"position"`
+	Metal     int64          `json:"metal"`
+	Crystal   int64          `json:"crystal"`
+	Deuterium int64          `json:"deuterium"`
+	CreatedAt time.Time      `json:"created_at"`
+	ExpiresAt time.Time      `json:"expires_at"`
+}
+
+func (WreckField) TableName() string {
+	return "wreck_fields"
 }

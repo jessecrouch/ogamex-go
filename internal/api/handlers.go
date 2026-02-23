@@ -23,6 +23,15 @@ type Handlers struct {
 	productionService *service.ProductionService
 	messageService    *service.MessageService
 	planetService     *service.PlanetService
+	noteService       *service.NoteService
+	allianceService   *service.AllianceService
+	buddyService     *service.BuddyService
+	moonService      *service.MoonService
+	espionageService *service.EspionageService
+	debrisService    *service.DebrisService
+	npcService       *service.NPCService
+	acsService       *service.ACSService
+	premiumService   *service.PremiumService
 }
 
 func NewHandlers(
@@ -35,6 +44,15 @@ func NewHandlers(
 	productionService *service.ProductionService,
 	messageService *service.MessageService,
 	planetService *service.PlanetService,
+	noteService *service.NoteService,
+	allianceService *service.AllianceService,
+	buddyService *service.BuddyService,
+	moonService *service.MoonService,
+	espionageService *service.EspionageService,
+	debrisService *service.DebrisService,
+	npcService *service.NPCService,
+	acsService *service.ACSService,
+	premiumService *service.PremiumService,
 ) *Handlers {
 	return &Handlers{
 		buildingService:   buildingService,
@@ -46,6 +64,15 @@ func NewHandlers(
 		productionService: productionService,
 		messageService:    messageService,
 		planetService:     planetService,
+		noteService:       noteService,
+		allianceService:   allianceService,
+		buddyService:     buddyService,
+		moonService:      moonService,
+		espionageService: espionageService,
+		debrisService:    debrisService,
+		npcService:       npcService,
+		acsService:       acsService,
+		premiumService:   premiumService,
 	}
 }
 
@@ -92,6 +119,70 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Delete("/messages/:id", h.DeleteMessage)
 
 	protected.Get("/galaxy/:galaxy/:system", h.GetGalaxy)
+
+	protected.Get("/highscore/:category", h.GetHighscore)
+
+	protected.Get("/notes", h.GetNotes)
+	protected.Post("/notes", h.CreateNote)
+	protected.Put("/notes/:id", h.UpdateNote)
+	protected.Delete("/notes/:id", h.DeleteNote)
+
+	protected.Get("/alliances", h.GetAlliances)
+	protected.Post("/alliances", h.CreateAlliance)
+	protected.Get("/alliances/:id", h.GetAlliance)
+	protected.Get("/alliances/:id/members", h.GetAllianceMembers)
+	protected.Post("/alliances/:id/apply", h.ApplyToAlliance)
+	protected.Get("/alliances/:id/applications", h.GetAllianceApplications)
+	protected.Post("/alliances/applications/:id/accept", h.AcceptApplication)
+	protected.Post("/alliances/applications/:id/reject", h.RejectApplication)
+	protected.Post("/alliances/leave", h.LeaveAlliance)
+	protected.Put("/alliances", h.UpdateAlliance)
+
+	protected.Get("/buddy", h.GetBuddies)
+	protected.Post("/buddy/request", h.SendBuddyRequest)
+	protected.Get("/buddy/pending", h.GetPendingBuddyRequests)
+	protected.Post("/buddy/:id/accept", h.AcceptBuddyRequest)
+	protected.Post("/buddy/:id/reject", h.RejectBuddyRequest)
+	protected.Delete("/buddy/:id", h.RemoveBuddy)
+
+	protected.Get("/planets/:id/jump-gate/targets", h.GetJumpGateTargets)
+	protected.Post("/planets/:id/jump-gate/execute", h.ExecuteJumpGate)
+	protected.Post("/planets/:id/phalanx/scan", h.ScanWithPhalanx)
+
+	protected.Get("/espionage", h.GetEspionageReports)
+	protected.Get("/espionage/unread", h.GetEspionageUnreadCount)
+	protected.Post("/espionage/:id/read", h.MarkEspionageReportRead)
+	protected.Delete("/espionage/:id", h.DeleteEspionageReport)
+
+	protected.Get("/user/vacation", h.GetVacationStatus)
+	protected.Post("/user/vacation/enable", h.EnableVacationMode)
+	protected.Post("/user/vacation/disable", h.DisableVacationMode)
+
+	protected.Get("/debris", h.GetDebrisFields)
+	protected.Get("/debris/:galaxy/:system/:position", h.GetDebrisField)
+	protected.Post("/debris/:galaxy/:system/:position/collect", h.CollectDebris)
+
+	protected.Get("/wrecks", h.GetWreckFields)
+	protected.Get("/wrecks/:galaxy/:system/:position", h.GetWreckField)
+	protected.Post("/wrecks/:galaxy/:system/:position/collect", h.CollectWreckField)
+
+	protected.Get("/npc/planets", h.GetNPCPlanets)
+	protected.Get("/npc/planets/:galaxy/:system/:position", h.GetNPCPlanet)
+	protected.Post("/npc/planets", h.CreateNPCPlanet)
+	protected.Post("/npc/fleets/expedition", h.GenerateExpeditionFleet)
+	protected.Post("/npc/fleets/pirate", h.GeneratePirateRaid)
+
+	protected.Post("/acs/create", h.CreateACS)
+	protected.Post("/acs/:id/join", h.JoinACS)
+	protected.Get("/acs/:id", h.GetACS)
+	protected.Get("/acs/:id/fleets", h.GetACSFleets)
+
+	protected.Get("/premium/status", h.GetPremiumStatus)
+	protected.Post("/premium/activate", h.ActivatePremium)
+	protected.Post("/merchant/buy", h.MerchantBuy)
+	protected.Post("/merchant/sell", h.MerchantSell)
+
+	protected.Post("/planets/:id/move", h.MovePlanet)
 }
 
 func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
@@ -1046,4 +1137,1012 @@ func (h *Handlers) GetGalaxy(c *fiber.Ctx) error {
 		"system":   system,
 		"positions": positions,
 	})
+}
+
+func (h *Handlers) GetHighscore(c *fiber.Ctx) error {
+	category := c.Params("category")
+	if category == "" {
+		category = "points"
+	}
+
+	validCategories := map[string]bool{
+		"points":   true,
+		"military": true,
+		"defense":  true,
+		"research": true,
+		"fleets":   true,
+	}
+	if !validCategories[category] {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid category"})
+	}
+
+	limit, _ := strconv.Atoi(c.Query("limit", "100"))
+
+	entries, err := h.planetService.GetHighscore(c.Context(), category, limit)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"category": category,
+		"entries":  entries,
+	})
+}
+
+func (h *Handlers) GetNotes(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	notes, err := h.noteService.GetNotes(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"notes": notes})
+}
+
+type CreateNoteRequest struct {
+	Galaxy   int    `json:"galaxy"`
+	System   int    `json:"system"`
+	Position int    `json:"position"`
+	Type     int    `json:"type"`
+	Subject  string `json:"subject"`
+	Text     string `json:"text"`
+}
+
+func (h *Handlers) CreateNote(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	var req CreateNoteRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	if req.Subject == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "subject is required"})
+	}
+
+	note, err := h.noteService.CreateNote(c.Context(), userID, service.CreateNoteInput{
+		Galaxy:   req.Galaxy,
+		System:   req.System,
+		Position: req.Position,
+		Type:     req.Type,
+		Subject:  req.Subject,
+		Text:     req.Text,
+	})
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"note":    note,
+	})
+}
+
+type UpdateNoteRequest struct {
+	Subject string `json:"subject"`
+	Text    string `json:"text"`
+}
+
+func (h *Handlers) UpdateNote(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	noteID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid note id"})
+	}
+
+	var req UpdateNoteRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	note, err := h.noteService.UpdateNote(c.Context(), uint(noteID), req.Subject, req.Text)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"note":    note,
+	})
+}
+
+func (h *Handlers) DeleteNote(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	noteID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid note id"})
+	}
+
+	err = h.noteService.DeleteNote(c.Context(), uint(noteID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetAlliances(c *fiber.Ctx) error {
+	alliances, err := h.allianceService.GetAllAlliances(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"alliances": alliances})
+}
+
+type CreateAllianceRequest struct {
+	Name        string `json:"name"`
+	Tag         string `json:"tag"`
+	Description string `json:"description"`
+	Logo        string `json:"logo"`
+	Website     string `json:"website"`
+}
+
+func (h *Handlers) CreateAlliance(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	var req CreateAllianceRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+	alliance, err := h.allianceService.CreateAlliance(c.Context(), userID, service.CreateAllianceInput{
+		Name: req.Name, Tag: req.Tag, Description: req.Description, Logo: req.Logo, Website: req.Website,
+	})
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true, "alliance": alliance})
+}
+
+func (h *Handlers) GetAlliance(c *fiber.Ctx) error {
+	allianceID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid alliance id"})
+	}
+	alliance, err := h.allianceService.GetAlliance(c.Context(), uint(allianceID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "alliance not found"})
+	}
+	return c.JSON(fiber.Map{"alliance": alliance})
+}
+
+func (h *Handlers) GetAllianceMembers(c *fiber.Ctx) error {
+	allianceID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid alliance id"})
+	}
+	members, err := h.allianceService.GetMembers(c.Context(), uint(allianceID))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"members": members})
+}
+
+type ApplyToAllianceRequest struct {
+	Message string `json:"message"`
+}
+
+func (h *Handlers) ApplyToAlliance(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	allianceID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid alliance id"})
+	}
+	var req ApplyToAllianceRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+	err = h.allianceService.ApplyToAlliance(c.Context(), userID, uint(allianceID), req.Message)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetAllianceApplications(c *fiber.Ctx) error {
+	allianceID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid alliance id"})
+	}
+	apps, err := h.allianceService.GetApplications(c.Context(), uint(allianceID))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"applications": apps})
+}
+
+func (h *Handlers) AcceptApplication(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	appID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid application id"})
+	}
+	err = h.allianceService.AcceptApplication(c.Context(), userID, uint(appID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) RejectApplication(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	appID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid application id"})
+	}
+	err = h.allianceService.RejectApplication(c.Context(), userID, uint(appID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) LeaveAlliance(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	err := h.allianceService.LeaveAlliance(c.Context(), userID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) UpdateAlliance(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	var req CreateAllianceRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+	err := h.allianceService.UpdateAlliance(c.Context(), userID, service.CreateAllianceInput{
+		Name: req.Name, Tag: req.Tag, Description: req.Description, Logo: req.Logo, Website: req.Website,
+	})
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetBuddies(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	buddies, err := h.buddyService.GetBuddies(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"buddies": buddies})
+}
+
+type SendBuddyRequest struct {
+	ReceiverID uint   `json:"receiver_id"`
+	Message    string `json:"message"`
+}
+
+func (h *Handlers) SendBuddyRequest(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	var req SendBuddyRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+	err := h.buddyService.SendRequest(c.Context(), userID, req.ReceiverID, req.Message)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetPendingBuddyRequests(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	requests, err := h.buddyService.GetPendingRequests(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"requests": requests})
+}
+
+func (h *Handlers) AcceptBuddyRequest(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	requestID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request id"})
+	}
+	err = h.buddyService.AcceptRequest(c.Context(), userID, uint(requestID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) RejectBuddyRequest(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	requestID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request id"})
+	}
+	err = h.buddyService.RejectRequest(c.Context(), userID, uint(requestID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) RemoveBuddy(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	buddyID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid buddy id"})
+	}
+	err = h.buddyService.RemoveBuddy(c.Context(), userID, uint(buddyID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetJumpGateTargets(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	moonID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid moon id"})
+	}
+	targets, err := h.moonService.GetJumpGateTargets(c.Context(), uint(moonID), userID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"targets": targets})
+}
+
+type JumpGateRequest struct {
+	TargetMoonID uint              `json:"target_moon_id"`
+	Ships        map[string]int    `json:"ships"`
+}
+
+func (h *Handlers) ExecuteJumpGate(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	moonID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid moon id"})
+	}
+	var req JumpGateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+	err = h.moonService.ExecuteJumpGate(c.Context(), userID, service.JumpFleetInput{
+		OriginMoonID: uint(moonID), TargetMoonID: req.TargetMoonID, Ships: req.Ships,
+	})
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+type PhalanxScanRequest struct {
+	Galaxy   int `json:"galaxy"`
+	System   int `json:"system"`
+	Position int `json:"position"`
+}
+
+func (h *Handlers) ScanWithPhalanx(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	moonID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid moon id"})
+	}
+	var req PhalanxScanRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+	result, err := h.moonService.ScanWithPhalanx(c.Context(), uint(moonID), userID, req.Galaxy, req.System, req.Position)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"result": result})
+}
+
+func (h *Handlers) GetEspionageReports(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	offset, _ := strconv.Atoi(c.Query("offset", "0"))
+	reports, err := h.espionageService.GetReports(c.Context(), userID, limit, offset)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"reports": reports, "limit": limit, "offset": offset})
+}
+
+func (h *Handlers) GetEspionageUnreadCount(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	count, err := h.espionageService.GetUnreadCount(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"unread_count": count})
+}
+
+func (h *Handlers) MarkEspionageReportRead(c *fiber.Ctx) error {
+	reportID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid report id"})
+	}
+	err = h.espionageService.MarkAsRead(c.Context(), uint(reportID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) DeleteEspionageReport(c *fiber.Ctx) error {
+	reportID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid report id"})
+	}
+	err = h.espionageService.DeleteReport(c.Context(), uint(reportID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
+func (h *Handlers) GetVacationStatus(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	onVacation, endTime, err := h.authService.GetVacationStatus(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"on_vacation": onVacation, "vacation_end_time": endTime})
+}
+
+func (h *Handlers) EnableVacationMode(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	err := h.authService.SetVacationMode(c.Context(), userID, true, nil)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true, "on_vacation": true})
+}
+
+func (h *Handlers) DisableVacationMode(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	err := h.authService.SetVacationMode(c.Context(), userID, false, nil)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"success": true, "on_vacation": false})
+}
+
+func (h *Handlers) GetDebrisFields(c *fiber.Ctx) error {
+	debris, err := h.debrisService.GetDebrisFields(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"data": debris})
+}
+
+func (h *Handlers) GetDebrisField(c *fiber.Ctx) error {
+	galaxy, err := strconv.Atoi(c.Params("galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+	system, err := strconv.Atoi(c.Params("system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+	position, err := strconv.Atoi(c.Params("position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid position"})
+	}
+
+	debris, err := h.debrisService.GetDebrisField(c.Context(), galaxy, system, position)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "debris field not found"})
+	}
+	return c.JSON(fiber.Map{"data": debris})
+}
+
+func (h *Handlers) CollectDebris(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	galaxy, err := strconv.Atoi(c.Params("galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+	system, err := strconv.Atoi(c.Params("system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+	position, err := strconv.Atoi(c.Params("position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid position"})
+	}
+
+	recyclerCapacity := int64(10000)
+	if capStr := c.FormValue("recycler_capacity"); capStr != "" {
+		if cap, err := strconv.ParseInt(capStr, 10, 64); err == nil {
+			recyclerCapacity = cap
+		}
+	}
+
+	metal, crystal, err := h.debrisService.CollectDebris(c.Context(), userID, galaxy, system, position, recyclerCapacity)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":     true,
+		"metal":       metal,
+		"crystal":     crystal,
+		"recycled":    metal + crystal,
+	})
+}
+
+func (h *Handlers) GetWreckFields(c *fiber.Ctx) error {
+	wrecks, err := h.debrisService.GetWreckFields(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"data": wrecks})
+}
+
+func (h *Handlers) GetWreckField(c *fiber.Ctx) error {
+	galaxy, err := strconv.Atoi(c.Params("galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+	system, err := strconv.Atoi(c.Params("system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+	position, err := strconv.Atoi(c.Params("position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid position"})
+	}
+
+	wreck, err := h.debrisService.GetWreckField(c.Context(), galaxy, system, position)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "wreck field not found"})
+	}
+	return c.JSON(fiber.Map{"data": wreck})
+}
+
+func (h *Handlers) CollectWreckField(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	galaxy, err := strconv.Atoi(c.Params("galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+	system, err := strconv.Atoi(c.Params("system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+	position, err := strconv.Atoi(c.Params("position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid position"})
+	}
+
+	cargoCapacity := int64(10000)
+	if cargoStr := c.FormValue("cargo_capacity"); cargoStr != "" {
+		if cap, err := strconv.ParseInt(cargoStr, 10, 64); err == nil {
+			cargoCapacity = cap
+		}
+	}
+
+	metal, crystal, deuterium, err := h.debrisService.CollectWreckField(c.Context(), userID, galaxy, system, position, cargoCapacity)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":     true,
+		"metal":       metal,
+		"crystal":     crystal,
+		"deuterium":   deuterium,
+		"recycled":    metal + crystal + deuterium,
+	})
+}
+
+func (h *Handlers) GetNPCPlanets(c *fiber.Ctx) error {
+	planets, err := h.npcService.GetNPCPlanets(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"data": planets})
+}
+
+func (h *Handlers) GetNPCPlanet(c *fiber.Ctx) error {
+	galaxy, err := strconv.Atoi(c.Params("galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+	system, err := strconv.Atoi(c.Params("system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+	position, err := strconv.Atoi(c.Params("position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid position"})
+	}
+
+	planet, err := h.npcService.GetNPCPlanet(c.Context(), galaxy, system, position)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"data": planet})
+}
+
+func (h *Handlers) CreateNPCPlanet(c *fiber.Ctx) error {
+	galaxy, err := strconv.Atoi(c.FormValue("galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid galaxy"})
+	}
+	system, err := strconv.Atoi(c.FormValue("system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid system"})
+	}
+	position, err := strconv.Atoi(c.FormValue("position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid position"})
+	}
+
+	level := 1
+	if levelStr := c.FormValue("level"); levelStr != "" {
+		if l, err := strconv.Atoi(levelStr); err == nil {
+			level = l
+		}
+	}
+
+	defenseLevel := 0
+	if defStr := c.FormValue("defense_level"); defStr != "" {
+		if d, err := strconv.Atoi(defStr); err == nil {
+			defenseLevel = d
+		}
+	}
+
+	resources := int64(10000)
+	if resStr := c.FormValue("resources"); resStr != "" {
+		if r, err := strconv.ParseInt(resStr, 10, 64); err == nil {
+			resources = r
+		}
+	}
+
+	config := service.NPCPlanetConfig{
+		Galaxy:       galaxy,
+		System:       system,
+		Position:     position,
+		Level:        level,
+		Resources:    resources,
+		DefenseLevel: defenseLevel,
+	}
+
+	planet, err := h.npcService.CreateNPCPlanet(c.Context(), config)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": planet})
+}
+
+func (h *Handlers) GenerateExpeditionFleet(c *fiber.Ctx) error {
+	galaxy, err := strconv.Atoi(c.FormValue("galaxy"))
+	if err != nil {
+		galaxy = 1
+	}
+	system, err := strconv.Atoi(c.FormValue("system"))
+	if err != nil {
+		system = 250
+	}
+	position, err := strconv.Atoi(c.FormValue("position"))
+	if err != nil {
+		position = 8
+	}
+
+	fleet, err := h.npcService.GenerateExpeditionFleet(c.Context(), galaxy, system, position)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": fleet})
+}
+
+func (h *Handlers) GeneratePirateRaid(c *fiber.Ctx) error {
+	galaxy, err := strconv.Atoi(c.FormValue("target_galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid target_galaxy"})
+	}
+	system, err := strconv.Atoi(c.FormValue("target_system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid target_system"})
+	}
+	position, err := strconv.Atoi(c.FormValue("target_position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid target_position"})
+	}
+
+	fleet, err := h.npcService.GeneratePirateRaid(c.Context(), galaxy, system, position)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": fleet})
+}
+
+func (h *Handlers) CreateACS(c *fiber.Ctx) error {
+	fleetID, err := strconv.ParseUint(c.FormValue("fleet_id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid fleet_id"})
+	}
+
+	targetGalaxy, _ := strconv.Atoi(c.FormValue("target_galaxy"))
+	targetSystem, _ := strconv.Atoi(c.FormValue("target_system"))
+	targetPosition, _ := strconv.Atoi(c.FormValue("target_position"))
+
+	fleet, err := h.fleetService.GetFleetByID(c.Context(), uint(fleetID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "fleet not found"})
+	}
+
+	params := service.ACSCreateParams{
+		TargetGalaxy:   targetGalaxy,
+		TargetSystem:   targetSystem,
+		TargetPosition: targetPosition,
+		ArrivalTime:    fleet.ArrivalTime,
+		FleetID:        uint(fleetID),
+	}
+
+	acs, err := h.acsService.CreateACS(c.Context(), params)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": acs})
+}
+
+func (h *Handlers) JoinACS(c *fiber.Ctx) error {
+	acsID, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid acs_id"})
+	}
+
+	fleetID, err := strconv.ParseUint(c.FormValue("fleet_id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid fleet_id"})
+	}
+
+	acs, err := h.acsService.JoinACS(c.Context(), uint(acsID), uint(fleetID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": acs})
+}
+
+func (h *Handlers) GetACS(c *fiber.Ctx) error {
+	acsID, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid acs_id"})
+	}
+
+	acs, err := h.acsService.GetACS(c.Context(), uint(acsID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "acs not found"})
+	}
+
+	return c.JSON(fiber.Map{"data": acs})
+}
+
+func (h *Handlers) GetACSFleets(c *fiber.Ctx) error {
+	acsID, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid acs_id"})
+	}
+
+	fleets, err := h.acsService.GetACSFleets(c.Context(), uint(acsID))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"data": fleets})
+}
+
+func (h *Handlers) GetPremiumStatus(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	isActive, endsAt, err := h.premiumService.GetPremiumStatus(c.Context(), userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"is_active":       isActive,
+		"premium_ends_at": endsAt,
+	})
+}
+
+func (h *Handlers) ActivatePremium(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	days, err := strconv.Atoi(c.FormValue("days"))
+	if err != nil || days <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid days"})
+	}
+
+	err = h.premiumService.ActivatePremium(c.Context(), userID, days)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "premium activated"})
+}
+
+func (h *Handlers) MerchantBuy(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	planetID, err := strconv.ParseUint(c.FormValue("planet_id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet_id"})
+	}
+
+	resourceType := c.FormValue("resource_type")
+	amount, err := strconv.ParseInt(c.FormValue("amount"), 10, 64)
+	if err != nil || amount <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid amount"})
+	}
+
+	err = h.premiumService.BuyResource(c.Context(), userID, uint(planetID), resourceType, amount)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "resource purchased"})
+}
+
+func (h *Handlers) MerchantSell(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	planetID, err := strconv.ParseUint(c.FormValue("planet_id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet_id"})
+	}
+
+	resourceType := c.FormValue("resource_type")
+	amount, err := strconv.ParseInt(c.FormValue("amount"), 10, 64)
+	if err != nil || amount <= 0 {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid amount"})
+	}
+
+	err = h.premiumService.SellResource(c.Context(), userID, uint(planetID), resourceType, amount)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "resource sold"})
+}
+
+func (h *Handlers) MovePlanet(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	if userID == 0 {
+		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
+	}
+
+	planetID, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid planet_id"})
+	}
+
+	targetGalaxy, err := strconv.Atoi(c.FormValue("target_galaxy"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid target_galaxy"})
+	}
+
+	targetSystem, err := strconv.Atoi(c.FormValue("target_system"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid target_system"})
+	}
+
+	targetPosition, err := strconv.Atoi(c.FormValue("target_position"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid target_position"})
+	}
+
+	input := service.MovePlanetInput{
+		PlanetID:       uint(planetID),
+		TargetGalaxy:   targetGalaxy,
+		TargetSystem:   targetSystem,
+		TargetPosition: targetPosition,
+	}
+
+	planet, err := h.planetService.MovePlanet(c.Context(), userID, input)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": planet})
 }

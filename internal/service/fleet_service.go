@@ -206,6 +206,10 @@ func (s *FleetService) GetActiveMissions(ctx context.Context, userID uint) ([]*s
 	return s.fleetRepo.GetByUserID(ctx, userID)
 }
 
+func (s *FleetService) GetFleetByID(ctx context.Context, fleetID uint) (*schema.FleetMission, error) {
+	return s.fleetRepo.GetByID(ctx, fleetID)
+}
+
 func (s *FleetService) RecallFleet(ctx context.Context, missionID uint) error {
 	mission, err := s.fleetRepo.GetByID(ctx, missionID)
 	if err != nil {

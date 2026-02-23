@@ -64,6 +64,12 @@ func (r *userRepository) GetByAuthToken(ctx context.Context, token string) (*sch
 	return &user, nil
 }
 
+func (r *userRepository) GetNPCUsers(ctx context.Context) ([]*schema.User, error) {
+	var users []*schema.User
+	err := r.db.WithContext(ctx).Where("is_npc = ?", true).Find(&users).Error
+	return users, err
+}
+
 func (r *userRepository) Update(ctx context.Context, user *schema.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }

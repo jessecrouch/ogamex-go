@@ -148,3 +148,55 @@ func generateToken() string {
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
+
+func (s *AuthService) SetVacationMode(ctx context.Context, userID uint, enabled bool, endTime *time.Time) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if enabled {
+		if user.OnVacation {
+			return errors.New("already on vacation")
+		}
+
+		planets, _ := s.planetRepo.GetByUserID(ctx, userID)
+		for _, p := range planets {
+			if p.DefenseActivated {
+				p.DefenseActivated = false
+				_ = s.planetRepo.Update(ctx, p)
+			}
+		}
+
+		vacationEnd := time.Now().Add(7 * 24 * time.Hour)
+		user.OnVacation = true
+		user.VacationEndTime = &vacationEnd
+	} else {
+		if !user.OnVacation {
+			return errors.New("not on vacation")
+		}
+
+		user.OnVacation = false
+		user.VacationEndTime = nil
+	}
+
+	return s.userRepo.Update(ctx, user)
+}
+
+func (s *AuthService) GetVacationStatus(ctx context.Context, userID uint) (bool, *time.Time, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return false, nil, err
+	}
+
+	if user.OnVacation && user.VacationEndTime != nil {
+		if time.Now().After(*user.VacationEndTime) {
+			user.OnVacation = false
+			user.VacationEndTime = nil
+			_ = s.userRepo.Update(ctx, user)
+			return false, nil, nil
+		}
+	}
+
+	return user.OnVacation, user.VacationEndTime, nil
+}

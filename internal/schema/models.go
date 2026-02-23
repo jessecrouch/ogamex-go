@@ -84,12 +84,31 @@ type Planet struct {
 	NaniteFactory     int `json:"nano_factory"`
 	Terraformer       int `json:"terraformer"`
 	SpaceDock         int `json:"space_dock"`
-	LunarBase         int `json:"lunar_base"`
-	SensorPhalanx     int `json:"sensor_phalanx"`
-	JumpGate          int `json:"jump_gate"`
+	LunarBase         int            `json:"lunar_base"`
+	SensorPhalanx     int            `json:"sensor_phalanx"`
+	JumpGate          int            `json:"jump_gate"`
 
-	SolarSatellite int `json:"solar_satellite"`
-	Crawler        int `json:"crawler"`
+	SolarSatellite   int            `json:"solar_satellite"`
+	Crawler          int            `json:"crawler"`
+
+	SmallCargo       int            `json:"small_cargo"`
+	LargeCargo       int            `json:"large_cargo"`
+	LightFighter    int            `json:"light_fighter"`
+	HeavyFighter    int            `json:"heavy_fighter"`
+	Cruiser          int            `json:"cruiser"`
+	Battleship       int            `json:"battleship"`
+	ColonyShip       int            `json:"colony_ship"`
+	Recycler         int            `json:"recycler"`
+	EspionageProbe   int            `json:"espionage_probe"`
+	Bomber           int            `json:"bomber"`
+	Destroyer        int            `json:"destroyer"`
+	Deathstar        int            `json:"deathstar"`
+	Battlecruiser    int            `json:"battlecruiser"`
+	Reaper           int            `json:"reaper"`
+	Pathfinder       int            `json:"pathfinder"`
+
+	RapidfireFrom   string         `json:"rapidfire_from"`
+	RapidfireTo     string         `json:"rapidfire_to"`
 }
 
 func (Planet) TableName() string {
@@ -115,6 +134,7 @@ type UserTech struct {
 	WeaponsTechnology      int            `gorm:"default:0" json:"weapons_technology"`
 	ShieldingTechnology    int            `gorm:"default:0" json:"shielding_technology"`
 	ArmorTechnology        int            `gorm:"default:0" json:"armor_technology"`
+	AssemblyTechnology     int            `gorm:"default:0" json:"assembly_technology"`
 }
 
 func (UserTech) TableName() string {

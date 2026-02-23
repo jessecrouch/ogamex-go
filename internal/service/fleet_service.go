@@ -9,6 +9,7 @@ import (
 	"ogamex-go/internal/formula"
 	"ogamex-go/internal/repository"
 	"ogamex-go/internal/schema"
+	"ogamex-go/pkg/rustbattle"
 )
 
 var (
@@ -626,6 +627,155 @@ func (s *FleetService) simulateBattle(attackerStats FleetStats, defenderStats Fl
 		AttackerRemaining: attackerRet,
 		DefenderRemaining: defenderRet,
 	}
+}
+
+func (s *FleetService) SimulateBattleWithRust(attackerShips map[int16]int16, defenderShips map[int16]int16, attackerTech, defenderTech *schema.UserTech) (BattleResult, error) {
+	attackerUnits := make(map[int16]rustbattle.UnitInfo)
+	for shipID, amount := range attackerShips {
+		stats := s.getShipStats(int16(shipID), attackerTech)
+		attackerUnits[shipID] = rustbattle.UnitInfo{
+			UnitID:       shipID,
+			Amount:       uint32(amount),
+			AttackPower:  stats.AttackPower,
+			ShieldPoints: stats.ShieldPoints,
+			HullPlating:  stats.HullPlating,
+			Rapidfire:    nil,
+		}
+	}
+
+	defenderUnits := make(map[int16]rustbattle.UnitInfo)
+	for shipID, amount := range defenderShips {
+		stats := s.getShipStats(int16(shipID), defenderTech)
+		defenderUnits[shipID] = rustbattle.UnitInfo{
+			UnitID:       shipID,
+			Amount:       uint32(amount),
+			AttackPower:  stats.AttackPower,
+			ShieldPoints: stats.ShieldPoints,
+			HullPlating:  stats.HullPlating,
+			Rapidfire:    nil,
+		}
+	}
+
+	input := rustbattle.BattleInput{
+		AttackerFleets: []rustbattle.FleetInput{
+			{
+				FleetMissionID: 1,
+				OwnerID:        1,
+				Units:          attackerUnits,
+			},
+		},
+		DefenderFleets: []rustbattle.FleetInput{
+			{
+				FleetMissionID: 2,
+				OwnerID:        2,
+				Units:          defenderUnits,
+			},
+		},
+	}
+
+	result, err := rustbattle.SimulateBattle(input)
+	if err != nil {
+		return BattleResult{}, err
+	}
+
+	attackerRemaining := make(map[int16]int16)
+	defenderRemaining := make(map[int16]int16)
+	attackerLosses := make(map[int16]int16)
+	defenderLosses := make(map[int16]int16)
+
+	if len(result.Results) > 0 {
+		lastRound := result.Results[len(result.Results)-1]
+		for _, u := range lastRound.AttackerShips {
+			attackerRemaining[u.UnitID] = int16(u.Amount)
+		}
+		for _, u := range lastRound.DefenderShips {
+			defenderRemaining[u.UnitID] = int16(u.Amount)
+		}
+		for _, u := range lastRound.AttackerLosses {
+			attackerLosses[u.UnitID] = int16(u.Amount)
+		}
+		for _, u := range lastRound.DefenderLosses {
+			defenderLosses[u.UnitID] = int16(u.Amount)
+		}
+	}
+
+	winner := result.Winner
+	if winner == "" {
+		winner = "draw"
+	}
+
+	return BattleResult{
+		Winner:            winner,
+		AttackerRemaining: attackerRemaining,
+		DefenderRemaining: defenderRemaining,
+		AttackerLosses:    attackerLosses,
+		DefenderLosses:    defenderLosses,
+	}, nil
+}
+
+func (s *FleetService) getShipStats(shipID int16, tech *schema.UserTech) struct {
+	AttackPower  float32
+	ShieldPoints float32
+	HullPlating  float32
+} {
+	weaponsBonus := float32(1.0)
+	shieldBonus := float32(1.0)
+	armorBonus := float32(1.0)
+	if tech != nil {
+		weaponsBonus = float32(1.0 + float64(tech.WeaponsTechnology)*0.1)
+		shieldBonus = float32(1.0 + float64(tech.ShieldingTechnology)*0.1)
+		armorBonus = float32(1.0 + float64(tech.ArmorTechnology)*0.1)
+	}
+
+	baseStats := map[int16]struct {
+		AttackPower  float32
+		ShieldPoints float32
+		HullPlating  float32
+	}{
+		202: {AttackPower: 5, ShieldPoints: 10, HullPlating: 40},
+		203: {AttackPower: 5, ShieldPoints: 25, HullPlating: 120},
+		204: {AttackPower: 50, ShieldPoints: 10, HullPlating: 100},
+		205: {AttackPower: 150, ShieldPoints: 25, HullPlating: 250},
+		206: {AttackPower: 400, ShieldPoints: 50, HullPlating: 800},
+		207: {AttackPower: 1000, ShieldPoints: 200, HullPlating: 2000},
+		208: {AttackPower: 50, ShieldPoints: 100, HullPlating: 500},
+		209: {AttackPower: 20, ShieldPoints: 10, HullPlating: 100},
+		210: {AttackPower: 0.1, ShieldPoints: 0, HullPlating: 5},
+		211: {AttackPower: 700, ShieldPoints: 150, HullPlating: 1700},
+		212: {AttackPower: 1, ShieldPoints: 10, HullPlating: 20},
+		213: {AttackPower: 1100, ShieldPoints: 300, HullPlating: 2200},
+		214: {AttackPower: 200000, ShieldPoints: 50000, HullPlating: 700000},
+		215: {AttackPower: 700, ShieldPoints: 100, HullPlating: 1500},
+		218: {AttackPower: 1300, ShieldPoints: 200, HullPlating: 2800},
+		219: {AttackPower: 300, ShieldPoints: 50, HullPlating: 600},
+		401: {AttackPower: 80, ShieldPoints: 20, HullPlating: 200},
+		402: {AttackPower: 100, ShieldPoints: 25, HullPlating: 200},
+		403: {AttackPower: 250, ShieldPoints: 100, HullPlating: 500},
+		404: {AttackPower: 150, ShieldPoints: 80, HullPlating: 400},
+		405: {AttackPower: 1100, ShieldPoints: 300, HullPlating: 2200},
+		406: {AttackPower: 3000, ShieldPoints: 500, HullPlating: 5000},
+		407: {AttackPower: 1, ShieldPoints: 5000, HullPlating: 100},
+		408: {AttackPower: 80, ShieldPoints: 20, HullPlating: 200},
+		409: {AttackPower: 150, ShieldPoints: 40, HullPlating: 300},
+	}
+
+	if base, ok := baseStats[shipID]; ok {
+		return struct {
+			AttackPower  float32
+			ShieldPoints float32
+			HullPlating  float32
+		}{
+			AttackPower:  base.AttackPower * weaponsBonus,
+			ShieldPoints: base.ShieldPoints * shieldBonus,
+			HullPlating:  base.HullPlating * armorBonus,
+		}
+	}
+
+	return struct {
+		AttackPower  float32
+		ShieldPoints float32
+		HullPlating  float32
+	}{0, 0, 0}
 }
 
 func (s *FleetService) processUndefendedAttack(ctx context.Context, mission *schema.FleetMission, targetPlanet *schema.Planet) error {

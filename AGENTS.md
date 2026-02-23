@@ -233,7 +233,7 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 | Missing DTOs | MEDIUM | FIXED |
 | Missing custom middleware | MEDIUM | FIXED |
 | Fleet missions | MEDIUM | MOSTLY DONE - attack/transport/colonize/recycle/expedition implemented |
-| Rust battle integration | HIGH | NOT INTEGRATED - uses Go-based battle simulation |
+| Rust battle integration | HIGH | DONE - added SimulateBattleWithRust method, needs to be called from processAttack |
 | Test coverage | MEDIUM | 76.5% on formula/ - need 95%+ |
 | Agent compatibility | LOW | Phase 6 not started |
 
@@ -268,8 +268,8 @@ ogamex-go/
 # Run wiki verification tests
 go test -v -run Wiki ./...
 
-# Run all tests
-go test ./...
+# Run all tests (requires LD_LIBRARY_PATH for rustbattle)
+LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go test ./...
 
 # Check coverage
 go test -cover ./internal/formula/...

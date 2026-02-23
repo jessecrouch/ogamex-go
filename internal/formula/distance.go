@@ -4,23 +4,35 @@ import (
 	"math"
 )
 
-func CalculateDistance(originX, originY, originZ, destX, destY, destZ int) int {
-	dx := originX - destX
+func CalculateDistance(galaxyA, systemA, positionA, galaxyB, systemB, positionB int) int {
+	dx := galaxyA - galaxyB
 	if dx < 0 {
 		dx = -dx
 	}
 
-	dy := originY - destY
+	dy := systemA - systemB
 	if dy < 0 {
 		dy = -dy
 	}
 
-	dz := originZ - destZ
+	dz := positionA - positionB
 	if dz < 0 {
 		dz = -dz
 	}
 
-	return dx*20000 + dy*5 + dz*20000
+	if dx == 0 && dy == 0 && dz == 0 {
+		return 0
+	}
+
+	if dx == 0 && dy == 0 {
+		return 2000 + 5*dz
+	}
+
+	if dx == 0 {
+		return 2000 + 270*dy + 5*dz
+	}
+
+	return 20000*dx + 270*dy + 5*dz
 }
 
 func CalculateFlightTime(distance int, speed int, universeSpeed int) int64 {

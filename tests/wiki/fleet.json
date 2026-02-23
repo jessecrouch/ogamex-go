@@ -1,0 +1,67 @@
+{
+  "description": "Fleet mechanics verification data based on OGame wiki",
+  "distance": {
+    "same_planet": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 1, "system": 1, "position": 1},
+      "expected_distance": 0
+    },
+    "same_system_diff_position": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 1, "system": 1, "position": 5},
+      "expected_distance": 2020
+    },
+    "same_system_diff_position_2": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 1, "system": 1, "position": 15},
+      "expected_distance": 2070
+    },
+    "diff_system_same_galaxy": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 1, "system": 10, "position": 1},
+      "expected_distance": 4430
+    },
+    "diff_system_same_galaxy_2": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 1, "system": 100, "position": 5},
+      "expected_distance": 27095
+    },
+    "diff_galaxy": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 2, "system": 1, "position": 1},
+      "expected_distance": 20000
+    },
+    "diff_galaxy_system": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 2, "system": 50, "position": 1},
+      "expected_distance": 35230
+    },
+    "max_distance": {
+      "origin": {"galaxy": 1, "system": 1, "position": 1},
+      "target": {"galaxy": 9, "system": 499, "position": 15},
+      "expected_distance": 442490
+    }
+  },
+  "flight_time": {
+    "formula": "10 + 3500 * sqrt(10 * distance / speed) / speed_factor",
+    "test_cases": [
+      {"distance": 1000, "speed": 10000, "speed_factor": 1, "expected_time": 21},
+      {"distance": 1000, "speed": 5000, "speed_factor": 1, "expected_time": 30},
+      {"distance": 10000, "speed": 10000, "speed_factor": 1, "expected_time": 121},
+      {"distance": 10000, "speed": 10000, "speed_factor": 2, "expected_time": 71},
+      {"distance": 20000, "speed": 10000, "speed_factor": 1, "expected_time": 176},
+      {"distance": 442490, "speed": 100, "speed_factor": 1, "expected_time": 14050}
+    ]
+  },
+  "fuel_consumption": {
+    "formula": "1 + round(base_cost * distance / 35000 * (speed / 100 + 1)^2)",
+    "test_cases": [
+      {"ship": "small_cargo", "distance": 1000, "speed": 5000, "expected_fuel": 10},
+      {"ship": "large_cargo", "distance": 1000, "speed": 7500, "expected_fuel": 10},
+      {"ship": "light_fighter", "distance": 1000, "speed": 12500, "expected_fuel": 10},
+      {"ship": "cruiser", "distance": 1000, "speed": 15000, "expected_fuel": 10},
+      {"ship": "battleship", "distance": 1000, "speed": 10000, "expected_fuel": 10},
+      {"ship": "deathstar", "distance": 1000, "speed": 100, "expected_fuel": 11}
+    ]
+  }
+}

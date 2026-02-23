@@ -1,0 +1,85 @@
+{
+  "description": "Research technology verification data based on OGame wiki",
+  "research": {
+    "espionage_technology": {
+      "lab_level_required": 3,
+      "prerequisites": {},
+      "base_cost": {"metal": 200, "crystal": 1000, "deuterium": 200}
+    },
+    "computer_technology": {
+      "lab_level_required": 1,
+      "prerequisites": {},
+      "base_cost": {"metal": 100, "crystal": 400, "deuterium": 200}
+    },
+    "weapons_technology": {
+      "lab_level_required": 4,
+      "prerequisites": {},
+      "base_cost": {"metal": 800, "crystal": 200, "deuterium": 0}
+    },
+    "shielding_technology": {
+      "lab_level_required": 6,
+      "prerequisites": {"energy_technology": 3},
+      "base_cost": {"metal": 400, "crystal": 600, "deuterium": 0}
+    },
+    "armor_technology": {
+      "lab_level_required": 2,
+      "prerequisites": {},
+      "base_cost": {"metal": 400, "crystal": 200, "deuterium": 0}
+    },
+    "energy_technology": {
+      "lab_level_required": 1,
+      "prerequisites": {},
+      "base_cost": {"metal": 0, "crystal": 800, "deuterium": 400}
+    },
+    "hyperspace_technology": {
+      "lab_level_required": 7,
+      "prerequisites": {"energy_technology": 5, "shielding_technology": 5},
+      "base_cost": {"metal": 4000, "crystal": 2000, "deuterium": 1000}
+    },
+    "combustion_drive": {
+      "lab_level_required": 1,
+      "prerequisites": {"energy_technology": 1},
+      "base_cost": {"metal": 400, "crystal": 0, "deuterium": 0}
+    },
+    "impulse_drive": {
+      "lab_level_required": 2,
+      "prerequisites": {"energy_technology": 1},
+      "base_cost": {"metal": 4000, "crystal": 2000, "deuterium": 600}
+    },
+    "hyperspace_drive": {
+      "lab_level_required": 7,
+      "prerequisites": {"hyperspace_technology": 3},
+      "base_cost": {"metal": 10000, "crystal": 6000, "deuterium": 4000}
+    },
+    "laser_technology": {
+      "lab_level_required": 1,
+      "prerequisites": {"energy_technology": 2},
+      "base_cost": {"metal": 200, "crystal": 600, "deuterium": 0}
+    },
+    "ion_technology": {
+      "lab_level_required": 4,
+      "prerequisites": {"laser_technology": 5, "energy_technology": 4},
+      "base_cost": {"metal": 1000, "crystal": 300, "deuterium": 0}
+    },
+    "plasma_technology": {
+      "lab_level_required": 4,
+      "prerequisites": {"energy_technology": 8, "laser_technology": 10, "ion_technology": 5},
+      "base_cost": {"metal": 2400, "crystal": 1200, "deuterium": 600}
+    },
+    "intergalactic_research_network": {
+      "lab_level_required": 10,
+      "prerequisites": {"computer_technology": 8, "hyperspace_technology": 8},
+      "base_cost": {"metal": 240000, "crystal": 160000, "deuterium": 80000}
+    },
+    "graviton_technology": {
+      "lab_level_required": 12,
+      "prerequisites": {},
+      "base_cost": {"metal": 100000, "crystal": 50000, "deuterium": 50000}
+    },
+    "astrophysics": {
+      "lab_level_required": 3,
+      "prerequisites": {"espionage_technology": 4, "impulse_drive": 3},
+      "base_cost": {"metal": 8000, "crystal": 4000, "deuterium": 2000}
+    }
+  }
+}

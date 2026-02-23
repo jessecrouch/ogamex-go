@@ -1,0 +1,75 @@
+{
+  "description": "Defense statistics verification data based on OGame wiki",
+  "defense": {
+    "rocket_launcher": {
+      "cost": {"metal": 2000, "crystal": 0, "deuterium": 0},
+      "structural_integrity": 2000,
+      "shield": 20,
+      "weapon": 80,
+      "rapid_fire_against": {}
+    },
+    "light_laser": {
+      "cost": {"metal": 1500, "crystal": 500, "deuterium": 0},
+      "structural_integrity": 2000,
+      "shield": 25,
+      "weapon": 100,
+      "rapid_fire_against": {}
+    },
+    "heavy_laser": {
+      "cost": {"metal": 6000, "crystal": 2000, "deuterium": 0},
+      "structural_integrity": 8000,
+      "shield": 100,
+      "weapon": 250,
+      "rapid_fire_against": {}
+    },
+    "ion_cannon": {
+      "cost": {"metal": 5000, "crystal": 3000, "deuterium": 0},
+      "structural_integrity": 8000,
+      "shield": 500,
+      "weapon": 150,
+      "rapid_fire_against": {}
+    },
+    "gauss_cannon": {
+      "cost": {"metal": 20000, "crystal": 15000, "deuterium": 2000},
+      "structural_integrity": 35000,
+      "shield": 200,
+      "weapon": 1100,
+      "rapid_fire_against": {}
+    },
+    "plasma_turret": {
+      "cost": {"metal": 50000, "crystal": 50000, "deuterium": 30000},
+      "structural_integrity": 100000,
+      "shield": 300,
+      "weapon": 3000,
+      "rapid_fire_against": {}
+    },
+    "small_shield_dome": {
+      "cost": {"metal": 10000, "crystal": 10000, "deuterium": 0},
+      "structural_integrity": 20000,
+      "shield": 2000,
+      "weapon": 1,
+      "rapid_fire_against": {}
+    },
+    "large_shield_dome": {
+      "cost": {"metal": 50000, "crystal": 50000, "deuterium": 0},
+      "structural_integrity": 100000,
+      "shield": 10000,
+      "weapon": 1,
+      "rapid_fire_against": {}
+    },
+    "anti_ballistic_missile": {
+      "cost": {"metal": 8000, "crystal": 0, "deuterium": 0},
+      "structural_integrity": 8000,
+      "shield": 1,
+      "weapon": 1,
+      "rapid_fire_against": {}
+    },
+    "interplanetary_missile": {
+      "cost": {"metal": 15000, "crystal": 15000, "deuterium": 2500},
+      "structural_integrity": 15000,
+      "shield": 1,
+      "weapon": 12000,
+      "rapid_fire_against": {}
+    }
+  }
+}

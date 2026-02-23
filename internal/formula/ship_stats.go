@@ -99,3 +99,51 @@ func CalculateShipWeapon(unitType domain.UnitType) int64 {
 	}
 	return stats.Weapon
 }
+
+type DefenseStats struct {
+	StructuralIntegrity int64
+	Shield             int64
+	Weapon             int64
+}
+
+var defenseStats = map[domain.UnitType]DefenseStats{
+	domain.UnitRocketLauncher:          {2000, 20, 80},
+	domain.UnitLightLaser:             {2000, 25, 100},
+	domain.UnitHeavyLaser:             {8000, 100, 250},
+	domain.UnitGaussCannon:           {35000, 200, 1100},
+	domain.UnitIonCannon:             {8000, 500, 150},
+	domain.UnitPlasmaTurret:           {100000, 300, 3000},
+	domain.UnitSmallShieldDome:       {20000, 2000, 1},
+	domain.UnitLargeShieldDome:       {100000, 10000, 1},
+	domain.UnitAntiBallisticMissiles: {8000, 1, 1},
+	domain.UnitInterplanetaryMissiles: {15000, 1, 12000},
+}
+
+func GetDefenseStats(unitType domain.UnitType) (DefenseStats, bool) {
+	stats, exists := defenseStats[unitType]
+	return stats, exists
+}
+
+func CalculateDefenseStructuralIntegrity(unitType domain.UnitType) int64 {
+	stats, exists := defenseStats[unitType]
+	if !exists {
+		return 0
+	}
+	return stats.StructuralIntegrity
+}
+
+func CalculateDefenseShield(unitType domain.UnitType) int64 {
+	stats, exists := defenseStats[unitType]
+	if !exists {
+		return 0
+	}
+	return stats.Shield
+}
+
+func CalculateDefenseWeapon(unitType domain.UnitType) int64 {
+	stats, exists := defenseStats[unitType]
+	if !exists {
+		return 0
+	}
+	return stats.Weapon
+}

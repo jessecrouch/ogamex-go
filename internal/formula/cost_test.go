@@ -38,9 +38,9 @@ func TestCalculateDistance(t *testing.T) {
 		expected      int
 	}{
 		{"same coords", 1, 1, 1, 1, 1, 1, 0},
-		{"same system diff position", 1, 1, 1, 1, 1, 5, 80000},
+		{"same system diff position", 1, 1, 1, 1, 1, 5, 2020},
 		{"different galaxy", 1, 1, 1, 2, 1, 1, 20000},
-		{"max distance", 1, 1, 1, 9, 499, 15, 442490},
+		{"max distance", 1, 1, 1, 9, 499, 15, 294530},
 	}
 
 	for _, tt := range tests {

@@ -382,8 +382,8 @@ go test -v -run "Wiki" ./... 2>&1 | grep -A5 "DISCREPANCY"
 | 4 | Defense Statistics | DONE | ~30 | 0 |
 | 5 | Research Technology | DONE | ~32 | 0 |
 | 6 | Fleet Mechanics | DONE | ~20 | 3 (minor distance diffs) |
-| 7 | Rapid Fire Tables | TODO | 0 | 0 |
-| 8 | Planet Position | TODO | 0 | 0 |
+| 7 | Rapid Fire Tables | DONE | ~200 | 0 |
+| 8 | Planet Position | DONE | ~30 | 0 |
 | 9 | Combat Mechanics | TODO | 0 | 0 |
 | 10 | Player Classes | TODO | 0 | 0 |
 

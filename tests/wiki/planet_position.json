@@ -1,0 +1,34 @@
+{
+  "description": "Planet position verification data based on OGame wiki",
+  "position_bonuses": {
+    "1": {"metal_bonus": 1.0, "crystal_bonus": 1.4, "deuterium_bonus": 1.0, "temp_range": "220-260"},
+    "2": {"metal_bonus": 1.0, "crystal_bonus": 1.3, "deuterium_bonus": 1.0, "temp_range": "170-210"},
+    "3": {"metal_bonus": 1.0, "crystal_bonus": 1.2, "deuterium_bonus": 1.0, "temp_range": "120-160"},
+    "4": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "70-110"},
+    "5": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "60-100"},
+    "6": {"metal_bonus": 1.17, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "50-90"},
+    "7": {"metal_bonus": 1.23, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "40-80"},
+    "8": {"metal_bonus": 1.35, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "30-70"},
+    "9": {"metal_bonus": 1.23, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "20-60"},
+    "10": {"metal_bonus": 1.17, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "10-50"},
+    "11": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "0-40"},
+    "12": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "-30-10"},
+    "13": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "-70- -30"},
+    "14": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "-110- -70"},
+    "15": {"metal_bonus": 1.0, "crystal_bonus": 1.0, "deuterium_bonus": 1.0, "temp_range": "-130- -90"}
+  },
+  "temperature_formula": "pos 1-4: 260-(p-1)*50, pos 5: 100, pos 6-14: 100-(p-5)*10, pos 15: -90",
+  "fields": {
+    "description": "Base fields range by position (without class bonuses)",
+    "1": {"min": 96, "max": 172},
+    "2": {"min": 104, "max": 176},
+    "3": {"min": 112, "max": 182},
+    "4": {"min": 118, "max": 208},
+    "5": {"min": 133, "max": 232},
+    "6": {"min": 146, "max": 242},
+    "7": {"min": 152, "max": 248},
+    "8": {"min": 156, "max": 252},
+    "9": {"min": 150, "max": 246},
+    "10": {"min": 142, "max": 232}
+  }
+}

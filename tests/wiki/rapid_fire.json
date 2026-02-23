@@ -1,0 +1,133 @@
+{
+  "description": "Rapid fire verification data based on OGame wiki",
+  "rapid_fire": {
+    "deathstar": {
+      "vs_espionage_probe": 1250,
+      "vs_solar_satellite": 1250,
+      "vs_small_cargo": 250,
+      "vs_large_cargo": 250,
+      "vs_light_fighter": 200,
+      "vs_heavy_fighter": 100,
+      "vs_cruiser": 33,
+      "vs_battleship": 30,
+      "vs_colony_ship": 250,
+      "vs_recycler": 250,
+      "vs_bomber": 25,
+      "vs_destroyer": 5,
+      "vs_battlecruiser": 15,
+      "vs_reaper": 30,
+      "vs_pathfinder": 10,
+      "vs_crawler": 1250,
+      "vs_rocket_launcher": 200,
+      "vs_light_laser": 200,
+      "vs_heavy_laser": 100,
+      "vs_ion_cannon": 100,
+      "vs_gauss_cannon": 50
+    },
+    "solar_satellite": {
+      "vs_espionage_probe": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_crawler": 5
+    },
+    "small_cargo": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_crawler": 5
+    },
+    "light_fighter": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_crawler": 5
+    },
+    "heavy_fighter": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 4,
+      "vs_large_cargo": 4,
+      "vs_crawler": 5
+    },
+    "cruiser": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_light_fighter": 6,
+      "vs_heavy_fighter": 4,
+      "vs_crawler": 5
+    },
+    "battleship": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_crawler": 5
+    },
+    "battlecruiser": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_light_fighter": 4,
+      "vs_heavy_fighter": 7,
+      "vs_crawler": 5
+    },
+    "bomber": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_crawler": 5,
+      "vs_rocket_launcher": 20,
+      "vs_light_laser": 20,
+      "vs_heavy_laser": 10,
+      "vs_ion_cannon": 10
+    },
+    "destroyer": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 3,
+      "vs_large_cargo": 3,
+      "vs_crawler": 5,
+      "vs_deathstar": 2
+    },
+    "reaper": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 5,
+      "vs_large_cargo": 5,
+      "vs_light_fighter": 5,
+      "vs_heavy_fighter": 5,
+      "vs_cruiser": 5,
+      "vs_battleship": 5,
+      "vs_colony_ship": 5,
+      "vs_recycler": 5,
+      "vs_bomber": 5,
+      "vs_destroyer": 5,
+      "vs_deathstar": 1250,
+      "vs_reaper": 5,
+      "vs_pathfinder": 5
+    },
+    "pathfinder": {
+      "vs_espionage_probe": 5,
+      "vs_solar_satellite": 5,
+      "vs_small_cargo": 5,
+      "vs_large_cargo": 5,
+      "vs_light_fighter": 5,
+      "vs_heavy_fighter": 5,
+      "vs_cruiser": 5,
+      "vs_battleship": 5,
+      "vs_colony_ship": 5,
+      "vs_recycler": 5,
+      "vs_bomber": 5,
+      "vs_destroyer": 5,
+      "vs_deathstar": 1250,
+      "vs_reaper": 5,
+      "vs_pathfinder": 5
+    }
+  }
+}

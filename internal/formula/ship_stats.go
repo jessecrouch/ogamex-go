@@ -147,3 +147,143 @@ func CalculateDefenseWeapon(unitType domain.UnitType) int64 {
 	}
 	return stats.Weapon
 }
+
+var rapidFireAgainst = map[domain.UnitType]map[domain.UnitType]int{
+	domain.UnitDeathstar: {
+		domain.UnitEspionageProbe:   1250,
+		domain.UnitSolarSatellite:   1250,
+		domain.UnitSmallCargo:       250,
+		domain.UnitLargeCargo:       250,
+		domain.UnitLightFighter:    200,
+		domain.UnitHeavyFighter:     100,
+		domain.UnitCruiser:          33,
+		domain.UnitBattleship:       30,
+		domain.UnitColonyShip:       250,
+		domain.UnitRecycler:         250,
+		domain.UnitBomber:           25,
+		domain.UnitDestroyer:        5,
+		domain.UnitBattlecruiser:    15,
+		domain.UnitReaper:           30,
+		domain.UnitPathfinder:       10,
+		domain.UnitCrawler:          1250,
+		domain.UnitRocketLauncher:  200,
+		domain.UnitLightLaser:       200,
+		domain.UnitHeavyLaser:      100,
+		domain.UnitIonCannon:        100,
+		domain.UnitGaussCannon:      50,
+	},
+	domain.UnitSolarSatellite: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitCrawler:         5,
+	},
+	domain.UnitSmallCargo: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitCrawler:        5,
+	},
+	domain.UnitLightFighter: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitCrawler:        5,
+	},
+	domain.UnitHeavyFighter: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     4,
+		domain.UnitLargeCargo:     4,
+		domain.UnitCrawler:        5,
+	},
+	domain.UnitCruiser: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitLightFighter:   6,
+		domain.UnitHeavyFighter:   4,
+		domain.UnitCrawler:        5,
+	},
+	domain.UnitBattleship: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitCrawler:        5,
+	},
+	domain.UnitBattlecruiser: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitLightFighter:   4,
+		domain.UnitHeavyFighter:   7,
+		domain.UnitCrawler:        5,
+	},
+	domain.UnitBomber: {
+		domain.UnitEspionageProbe:   5,
+		domain.UnitSolarSatellite:   5,
+		domain.UnitSmallCargo:       3,
+		domain.UnitLargeCargo:       3,
+		domain.UnitCrawler:          5,
+		domain.UnitRocketLauncher:   20,
+		domain.UnitLightLaser:       20,
+		domain.UnitHeavyLaser:       10,
+		domain.UnitIonCannon:        10,
+	},
+	domain.UnitDestroyer: {
+		domain.UnitEspionageProbe: 5,
+		domain.UnitSolarSatellite: 5,
+		domain.UnitSmallCargo:     3,
+		domain.UnitLargeCargo:     3,
+		domain.UnitCrawler:        5,
+		domain.UnitDeathstar:      2,
+	},
+	domain.UnitReaper: {
+		domain.UnitEspionageProbe:  5,
+		domain.UnitSolarSatellite:  5,
+		domain.UnitSmallCargo:      5,
+		domain.UnitLargeCargo:      5,
+		domain.UnitLightFighter:    5,
+		domain.UnitHeavyFighter:    5,
+		domain.UnitCruiser:         5,
+		domain.UnitBattleship:       5,
+		domain.UnitColonyShip:      5,
+		domain.UnitRecycler:        5,
+		domain.UnitBomber:          5,
+		domain.UnitDestroyer:       5,
+		domain.UnitDeathstar:       1250,
+		domain.UnitReaper:          5,
+		domain.UnitPathfinder:      5,
+	},
+	domain.UnitPathfinder: {
+		domain.UnitEspionageProbe:  5,
+		domain.UnitSolarSatellite:  5,
+		domain.UnitSmallCargo:      5,
+		domain.UnitLargeCargo:      5,
+		domain.UnitLightFighter:    5,
+		domain.UnitHeavyFighter:    5,
+		domain.UnitCruiser:         5,
+		domain.UnitBattleship:       5,
+		domain.UnitColonyShip:      5,
+		domain.UnitRecycler:        5,
+		domain.UnitBomber:          5,
+		domain.UnitDestroyer:       5,
+		domain.UnitDeathstar:       1250,
+		domain.UnitReaper:          5,
+		domain.UnitPathfinder:       5,
+	},
+}
+
+func GetRapidFireAgainst(attacker domain.UnitType, defender domain.UnitType) int {
+	if attacks, ok := rapidFireAgainst[attacker]; ok {
+		if rapidFire, ok := attacks[defender]; ok {
+			return rapidFire
+		}
+	}
+	return 1
+}

@@ -69,6 +69,18 @@ Response:
 curl http://localhost:8080/api/v1/status
 ```
 
+### 4. Get complete API documentation
+
+```bash
+# JSON format (for agents)
+curl http://localhost:8080/swagger/doc.json
+
+# YAML format (for browser viewing)
+curl http://localhost:8080/swagger/yaml
+```
+
+The full Swagger documentation includes all **84 endpoints** with detailed parameters and response schemas.
+
 ---
 
 ## Authentication

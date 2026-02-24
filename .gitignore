@@ -2,3 +2,4 @@ ogamex-go
 *.exe
 .env
 *.log
+ogamex

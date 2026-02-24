@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -59,8 +60,19 @@ func main() {
 	}
 	appLogger.Info().Msg("Database connected and migrated")
 
-	userRepo := repository.NewUserRepository(db)
+	// Initialize repositories
 	planetRepo := repository.NewPlanetRepository(db)
+
+	// Fix production percentages on startup (ensures all planets have valid production settings)
+	ctx := context.Background()
+	fixed, err := planetRepo.FixProductionPercentages(ctx)
+	if err != nil {
+		appLogger.Warn().Err(err).Msg("Failed to fix production percentages")
+	} else if fixed > 0 {
+		appLogger.Info().Int64("planets_fixed", fixed).Msg("Fixed production percentages for planets")
+	}
+
+	userRepo := repository.NewUserRepository(db)
 	techRepo := repository.NewUserTechRepository(db)
 	buildingQueueRepo := repository.NewBuildingQueueRepository(db)
 	researchQueueRepo := repository.NewResearchQueueRepository(db)

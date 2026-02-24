@@ -1,0 +1,173 @@
+basePath: /api/v1
+externalDocs:
+  description: OGameX GitHub
+  url: https://github.com/lanedirt/OGameX
+host: localhost:8080
+info:
+  contact:
+    email: support@ogamex.io
+    name: OGameX Support
+    url: https://github.com/lanedirt/OGameX
+  description: API-only OGame server for autonomous AI agents. Build planets, research
+    tech, send fleets, and simulate battles.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: OGameX API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate with username and password to receive an auth token
+      parameters:
+      - description: Username
+        in: query
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: query
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+      summary: Login user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account and receive an auth token
+      parameters:
+      - description: Username
+        in: query
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: query
+        name: password
+        required: true
+        type: string
+      - description: Player name (defaults to username)
+        in: query
+        name: player_name
+        type: string
+      - description: Email address
+        in: query
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+      summary: Register new user
+      tags:
+      - Auth
+  /battle/simulate:
+    post:
+      consumes:
+      - application/json
+      description: Run a battle simulation (SpeedSim style) - supports multiple attackers,
+        defense, ACS, and Monte Carlo simulations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      summary: Simulate battle
+      tags:
+      - Battle
+  /fleets/send:
+    post:
+      consumes:
+      - application/json
+      description: Send a fleet of ships on a mission (attack, transport, colonize,
+        recycle, etc.)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - BearerAuth: []
+      summary: Send fleet
+      tags:
+      - Fleets
+  /planets/{id}/buildings/{building_id}:
+    post:
+      consumes:
+      - application/json
+      description: Start building a structure on a planet (mine, power plant, etc.)
+      parameters:
+      - description: Planet ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Building Type ID
+        in: path
+        name: building_id
+        required: true
+        type: integer
+      - description: 'Building level (default: 1)'
+        in: query
+        name: level
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      security:
+      - BearerAuth: []
+      summary: Start building construction
+      tags:
+      - Buildings
+  /planets/{id}/overview:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed overview of a planet including resources, production
+        rates, and buildings
+      parameters:
+      - description: Planet ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+      security:
+      - BearerAuth: []
+      summary: Get planet overview
+      tags:
+      - Planets
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"

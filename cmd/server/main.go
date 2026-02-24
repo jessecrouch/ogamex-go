@@ -1,3 +1,22 @@
+// @title           OGameX API
+// @version         1.0
+// @description     API-only OGame server for autonomous AI agents. Build planets, research tech, send fleets, and simulate battles.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   OGameX Support
+// @contact.url    https://github.com/lanedirt/OGameX
+// @contact.email  support@ogamex.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.basic BasicAuth
+
+// @externalDocs.description  OGameX GitHub
+// @externalDocs.url         https://github.com/lanedirt/OGameX
 package main
 
 import (
@@ -15,6 +34,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 
+	"ogamex-go/docs"
 	"ogamex-go/internal/api"
 	"ogamex-go/internal/api/middleware"
 	"ogamex-go/internal/database"
@@ -177,6 +197,24 @@ func main() {
 			"database": "connected",
 		})
 	})
+
+	// Swagger JSON endpoint for agents - serve generated swagger.json
+	app.Get("/swagger/doc.json", func(c *fiber.Ctx) error {
+		return c.SendFile("./docs/swagger.json")
+	})
+
+	// Swagger UI - serve generated swagger.yaml for browser viewing
+	app.Get("/swagger/yaml", func(c *fiber.Ctx) error {
+		return c.SendFile("./docs/swagger.yaml")
+	})
+
+	// Initialize swagger docs
+	docs.SwaggerInfo.Title = "OGameX API"
+	docs.SwaggerInfo.Description = "API-only OGame server for autonomous AI agents"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	handlers.SetupRoutes(app)
 

@@ -481,6 +481,17 @@ func (h *Handlers) SetCurrentPlanet(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "current_planet_id": planetID})
 }
 
+// GetPlanetOverview returns planet overview with resources, production, and buildings
+// @Summary Get planet overview
+// @Description Get detailed overview of a planet including resources, production rates, and buildings
+// @Tags Planets
+// @Accept json
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Success 200
+// @Failure 404
+// @Security BearerAuth
+// @Router /planets/{id}/overview [get]
 func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -590,6 +601,19 @@ func (h *Handlers) GetPlanetBuildings(c *fiber.Ctx) error {
 	})
 }
 
+// StartBuilding starts constructing a building
+// @Summary Start building construction
+// @Description Start building a structure on a planet (mine, power plant, etc.)
+// @Tags Buildings
+// @Accept json
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Param building_id path int true "Building Type ID"
+// @Param level query int false "Building level (default: 1)"
+// @Success 200
+// @Failure 400
+// @Security BearerAuth
+// @Router /planets/{id}/buildings/{building_id} [post]
 func (h *Handlers) StartBuilding(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -759,6 +783,16 @@ type FleetRequest struct {
 	Ships map[string]int `json:"ships"`
 }
 
+// SendFleet sends a fleet mission
+// @Summary Send fleet
+// @Description Send a fleet of ships on a mission (attack, transport, colonize, recycle, etc.)
+// @Tags Fleets
+// @Accept json
+// @Produce json
+// @Success 200
+// @Failure 400
+// @Security BearerAuth
+// @Router /fleets/send [post]
 func (h *Handlers) SendFleet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -848,6 +882,15 @@ func (h *Handlers) GetFleets(c *fiber.Ctx) error {
 	})
 }
 
+// SimulateBattle simulates a battle without sending fleets
+// @Summary Simulate battle
+// @Description Run a battle simulation (SpeedSim style) - supports multiple attackers, defense, ACS, and Monte Carlo simulations
+// @Tags Battle
+// @Accept json
+// @Produce json
+// @Success 200
+// @Failure 400
+// @Router /battle/simulate [post]
 func (h *Handlers) SimulateBattle(c *fiber.Ctx) error {
 	var req dto.BattleSimulateRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -1515,6 +1558,19 @@ type RegisterRequest struct {
 	PlayerName string `json:"player_name"`
 }
 
+// Register creates a new user account
+// @Summary Register new user
+// @Description Create a new user account and receive an auth token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param username query string true "Username"
+// @Param password query string true "Password"
+// @Param player_name query string false "Player name (defaults to username)"
+// @Param email query string false "Email address"
+// @Success 201
+// @Failure 400
+// @Router /auth/register [post]
 func (h *Handlers) Register(c *fiber.Ctx) error {
 	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -1552,6 +1608,17 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// Login authenticates a user and returns an auth token
+// @Summary Login user
+// @Description Authenticate with username and password to receive an auth token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param username query string true "Username"
+// @Param password query string true "Password"
+// @Success 200
+// @Failure 401
+// @Router /auth/login [post]
 func (h *Handlers) Login(c *fiber.Ctx) error {
 	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {

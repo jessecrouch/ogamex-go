@@ -90,6 +90,7 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 
 	api.Post("/battle/simulate", h.SimulateBattle)
 
+	// Create protected group FIRST with auth middleware
 	protected := api.Group("", h.authMiddleware)
 
 	protected.Get("/user", h.GetUser)
@@ -104,6 +105,14 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Get("/planets/:id/queue", h.GetBuildingQueue)
 	protected.Delete("/queue/:id", h.CancelBuilding)
 	protected.Get("/planets/:id/overview", h.GetPlanetOverview)
+
+	// Debug/test endpoint to fix production percentages - requires auth but not admin
+	protectedDebug := protected.Group("")
+	protectedDebug.Post("/debug/fix-production", h.FixProductionPercentages)
+
+	// Admin group - requires admin middleware
+	admin := protected.Group("")
+	admin.Post("/admin/fix-planets", h.FixPlanets)
 
 	protected.Post("/research/start", h.StartResearch)
 	protected.Get("/research/queue", h.GetResearchQueue)
@@ -222,6 +231,62 @@ func (h *Handlers) authMiddleware(c *fiber.Ctx) error {
 	c.Locals("user", user)
 
 	return c.Next()
+}
+
+func (h *Handlers) adminMiddleware(c *fiber.Ctx) error {
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(401).JSON(fiber.Map{"error": "authorization required"})
+	}
+
+	parts := []string{}
+	for _, p := range strings.Split(authHeader, " ") {
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid authorization format"})
+	}
+
+	token := parts[1]
+	user, err := h.authService.ValidateToken(c.Context(), token)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid token"})
+	}
+
+	if user.ID != 1 {
+		return c.Status(403).JSON(fiber.Map{"error": "admin access required"})
+	}
+
+	c.Locals("user_id", user.ID)
+	c.Locals("user", user)
+
+	return c.Next()
+}
+
+func (h *Handlers) FixPlanets(c *fiber.Ctx) error {
+	count, err := h.planetRepo.FixProductionPercentages(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":         true,
+		"planets_fixed":  count,
+	})
+}
+
+func (h *Handlers) FixProductionPercentages(c *fiber.Ctx) error {
+	count, err := h.planetRepo.FixProductionPercentages(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"success":        true,
+		"planets_fixed": count,
+	})
 }
 
 func (h *Handlers) GetStatus(c *fiber.Ctx) error {
@@ -397,7 +462,15 @@ func (h *Handlers) SetCurrentPlanet(c *fiber.Ctx) error {
 	}
 
 	if planet.UserID != userID {
-		return c.Status(403).JSON(fiber.Map{"error": "planet does not belong to user"})
+		userPlanets, _ := h.planetRepo.GetByUserID(c.Context(), userID)
+		planetIDs := make([]uint, len(userPlanets))
+		for i, p := range userPlanets {
+			planetIDs[i] = p.ID
+		}
+		return c.Status(403).JSON(fiber.Map{
+			"error":          "planet does not belong to user",
+			"your_planets":   planetIDs,
+		})
 	}
 
 	err = h.authService.SetCurrentPlanet(c.Context(), userID, uint(planetID))
@@ -423,6 +496,11 @@ func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 	
 	hasQueue := len(queue) > 0
 
+	user := c.Locals("user").(*schema.User)
+	tech, _ := h.authService.GetUserTech(c.Context(), user.ID)
+
+	production := h.productionService.CalculateProduction(planet, tech)
+
 	return c.JSON(fiber.Map{
 		"planet_id":     planet.ID,
 		"name":          planet.Name,
@@ -433,9 +511,9 @@ func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 			"energy":     planet.EnergyAvailable,
 		},
 		"production": fiber.Map{
-			"metal":      planet.MetalProduction,
-			"crystal":    planet.CrystalProduction,
-			"deuterium":  planet.DeuteriumProduction,
+			"metal":      production.Metal,
+			"crystal":    production.Crystal,
+			"deuterium":  production.Deuterium,
 		},
 		"buildings": fiber.Map{
 			"metal_mine":     planet.MetalMine,
@@ -443,6 +521,11 @@ func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 			"deuterium_synth": planet.DeuteriumSynthesizer,
 			"solar_plant":    planet.SolarPlant,
 			"fusion_plant":   planet.FusionPlant,
+		},
+		"production_percent": fiber.Map{
+			"metal_mine":     planet.MetalMinePercent,
+			"crystal_mine":  planet.CrystalMinePercent,
+			"deuterium_synth": planet.DeuteriumSynthesizerPercent,
 		},
 		"has_queue":     hasQueue,
 		"fields_used":   planet.FieldsUsed,
@@ -1513,7 +1596,15 @@ func (h *Handlers) BuildUnit(c *fiber.Ctx) error {
 	}
 
 	if planet.UserID != userID {
-		return c.Status(403).JSON(fiber.Map{"error": "planet does not belong to user"})
+		userPlanets, _ := h.planetRepo.GetByUserID(c.Context(), userID)
+		planetIDs := make([]uint, len(userPlanets))
+		for i, p := range userPlanets {
+			planetIDs[i] = p.ID
+		}
+		return c.Status(403).JSON(fiber.Map{
+			"error":          "planet does not belong to user",
+			"your_planets":   planetIDs,
+		})
 	}
 
 	var req BuildUnitRequest

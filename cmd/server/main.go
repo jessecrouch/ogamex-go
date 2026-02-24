@@ -81,7 +81,7 @@ func main() {
 		economySpeed = 1
 	}
 	productionService := service.NewProductionService(planetRepo, techRepo, economySpeed)
-	authService := service.NewAuthService(userRepo, planetRepo)
+	authService := service.NewAuthService(userRepo, planetRepo, techRepo)
 	unitService := service.NewUnitService(planetRepo, unitQueueRepo, techRepo)
 	messageRepo := repository.NewMessageRepository(db)
 	messageService := service.NewMessageService(messageRepo, userRepo)

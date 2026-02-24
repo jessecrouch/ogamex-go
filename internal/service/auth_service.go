@@ -23,12 +23,14 @@ var (
 type AuthService struct {
 	userRepo    repository.UserRepository
 	planetRepo  repository.PlanetRepository
+	techRepo    repository.UserTechRepository
 }
 
-func NewAuthService(userRepo repository.UserRepository, planetRepo repository.PlanetRepository) *AuthService {
+func NewAuthService(userRepo repository.UserRepository, planetRepo repository.PlanetRepository, techRepo repository.UserTechRepository) *AuthService {
 	return &AuthService{
 		userRepo:   userRepo,
 		planetRepo: planetRepo,
+		techRepo:   techRepo,
 	}
 }
 
@@ -100,6 +102,12 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*schem
 		TempMax:      50,
 		FieldsUsed:   0,
 		FieldsMax:    10,
+
+		MetalMinePercent:           100,
+		CrystalMinePercent:         100,
+		DeuteriumSynthesizerPercent: 100,
+		SolarPlantPercent:          100,
+		FusionPlantPercent:         100,
 	}
 
 	err = s.planetRepo.Create(ctx, homePlanet)
@@ -141,6 +149,16 @@ func (s *AuthService) ValidateToken(ctx context.Context, token string) (*schema.
 	}
 
 	return user, nil
+}
+
+func (s *AuthService) GetUserTech(ctx context.Context, userID uint) (*schema.UserTech, error) {
+	tech, err := s.techRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return &schema.UserTech{
+			UserID: userID,
+		}, nil
+	}
+	return tech, nil
 }
 
 func generateToken() string {

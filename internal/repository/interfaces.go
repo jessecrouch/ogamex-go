@@ -30,6 +30,7 @@ type PlanetRepository interface {
 	Delete(ctx context.Context, id uint) error
 	AddResources(ctx context.Context, id uint, metal, crystal, deuterium int64) error
 	SubResources(ctx context.Context, id uint, metal, crystal, deuterium int64) error
+	FixProductionPercentages(ctx context.Context) (int64, error)
 }
 
 type UserTechRepository interface {

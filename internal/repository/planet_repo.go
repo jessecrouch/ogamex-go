@@ -106,3 +106,17 @@ func (r *planetRepository) SubResources(ctx context.Context, id uint, metal, cry
 			"deuterium": gorm.Expr("deuterium - ?", deuterium),
 		}).Error
 }
+
+func (r *planetRepository) FixProductionPercentages(ctx context.Context) (int64, error) {
+	result := r.db.WithContext(ctx).Exec(`
+		UPDATE planets 
+		SET metal_mine_percent = 100, 
+		    crystal_mine_percent = 100, 
+		    deuterium_synthesizer_percent = 100, 
+		    solar_plant_percent = 100, 
+		    fusion_plant_percent = 100
+		WHERE metal_mine_percent != 100 OR metal_mine_percent IS NULL
+	`)
+
+	return result.RowsAffected, result.Error
+}

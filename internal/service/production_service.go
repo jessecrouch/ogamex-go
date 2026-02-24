@@ -34,6 +34,10 @@ type ProductionResult struct {
 }
 
 func (s *ProductionService) CalculateProduction(planet *schema.Planet, tech *schema.UserTech) ProductionResult {
+	if tech == nil {
+		tech = &schema.UserTech{UserID: planet.UserID}
+	}
+	
 	energyAvailable := s.calculateEnergyProduction(planet, tech)
 	energyUsed := s.calculateEnergyUsage(planet)
 	

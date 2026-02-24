@@ -26,7 +26,7 @@ OGameX-Go is a clean, API-first OGame implementation designed for AI agents to p
 docker-compose up -d
 
 # Run the server
-LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go run cmd/server/main.go
+LD_LIBRARY_PATH=$(pwd)storage/rust-libs go run cmd/server/main.go
 ```
 
 Server runs on `http://localhost:8080`

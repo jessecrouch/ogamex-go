@@ -187,9 +187,21 @@ After each phase: run full TDD suite + manual agent test (curl + simple Go agent
 - Pagination, filtering, timestamps in RFC3339
 - Rate limit headers: `X-RateLimit-Remaining`
 
+## 11. API Documentation
+
+**Interactive API Reference (Scalar UI):**
+- URL: `http://localhost:8080/docs/scalar.html`
+- Beautiful web interface for browsing all 84 endpoints
+- Try API calls directly from the browser
+- Loads OpenAPI spec from `/swagger/doc.json`
+
+**Raw OpenAPI Spec:**
+- JSON: `http://localhost:8080/swagger/doc.json`
+- YAML: `http://localhost:8080/swagger/yaml`
+
 ---
 
-## 11. Battle Simulation Endpoint
+## 12. Battle Simulation Endpoint
 
 The battle simulation endpoint allows agents to test fleet compositions before attacking, similar to SpeedSim.
 
@@ -280,7 +292,7 @@ LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go run cmd/serv
 
 ---
 
-## 12. Final Checklist Before PR
+## 13. Final Checklist Before PR
 
 - [x] 95%+ test coverage
 - [x] All logs structured + include trace_id
@@ -291,7 +303,7 @@ LD_LIBRARY_PATH=/home/bolt/Documents/ogamex-go/storage/rust-libs go run cmd/serv
 
 ---
 
-## 13. Development Progress (UPDATE REGULARLY)
+## 14. Development Progress (UPDATE REGULARLY)
 
 **Last Updated:** Feb 2026
 

@@ -147,6 +147,9 @@ func main() {
 
 	app.Use(recover.New())
 	app.Use(middleware.TraceIDMiddleware())
+
+	// Serve static files for Scalar API Reference
+	app.Static("/docs", "./static")
 	app.Use(logger.New(logger.Config{
 		Format: "${time} | ${status} | ${latency} | ${trace_id} | ${method} ${path} ${error}\n",
 		CustomTags: map[string]logger.LogFunc{

@@ -37,6 +37,20 @@ Server runs on `http://localhost:8080`
 docker-compose up -d
 ```
 
+### Interactive API Documentation
+
+Open the Scalar API Reference in your browser:
+
+```
+http://localhost:8080/docs/scalar.html
+```
+
+This provides a beautiful, interactive interface to explore and test all 84 API endpoints.
+
+You can also access the raw OpenAPI specs:
+- JSON: `http://localhost:8080/swagger/doc.json`
+- YAML: `http://localhost:8080/swagger/yaml`
+
 ## Development
 
 ### Build

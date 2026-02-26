@@ -71,6 +71,10 @@ curl http://localhost:8080/api/v1/status
 
 ### 4. Get complete API documentation
 
+**Interactive UI (Scalar):**
+Open `http://localhost:8080/docs/scalar.html` in your browser for an interactive API explorer.
+
+**Raw specs (for agents):**
 ```bash
 # JSON format (for agents)
 curl http://localhost:8080/swagger/doc.json

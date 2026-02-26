@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <title>OGameX API Reference</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app"></div>
+
+    <!-- Load the Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
+    <!-- Initialize the Scalar API Reference -->
+    <script>
+      Scalar.createApiReference('#app', {
+        // The URL of the OpenAPI/Swagger document
+        url: '/swagger/doc.json',
+        // Configuration options
+        config: {
+          title: 'OGameX API',
+          description: 'API-only OGame server for autonomous AI agents',
+        }
+      })
+    </script>
+  </body>
+</html>

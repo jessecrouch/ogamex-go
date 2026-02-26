@@ -14,6 +14,77 @@ import (
 	"ogamex-go/internal/service"
 )
 
+type BuildingRequest struct {
+	Level int `json:"level"`
+}
+
+type ResearchRequest struct {
+	ResearchID int `json:"research_id"`
+}
+
+type FleetRequest struct {
+	MissionType    int `json:"mission_type"`
+	OriginGalaxy   int `json:"origin_galaxy"`
+	OriginSystem   int `json:"origin_system"`
+	OriginPosition int `json:"origin_position"`
+	TargetGalaxy   int `json:"target_galaxy"`
+	TargetSystem   int `json:"target_system"`
+	TargetPosition int `json:"target_position"`
+	Resources      struct {
+		Metal     int64 `json:"metal"`
+		Crystal   int64 `json:"crystal"`
+		Deuterium int64 `json:"deuterium"`
+	} `json:"resources"`
+	Ships map[string]int `json:"ships"`
+}
+
+type BuildUnitRequest struct {
+	UnitID int `json:"unit_id"`
+	Amount int `json:"amount"`
+}
+
+type CreateNoteRequest struct {
+	Galaxy   int    `json:"galaxy"`
+	System   int    `json:"system"`
+	Position int    `json:"position"`
+	Type     int    `json:"type"`
+	Subject  string `json:"subject"`
+	Text     string `json:"text"`
+}
+
+type UpdateNoteRequest struct {
+	Subject string `json:"subject"`
+	Text    string `json:"text"`
+}
+
+type CreateAllianceRequest struct {
+	Name        string `json:"name"`
+	Tag         string `json:"tag"`
+	Description string `json:"description"`
+	Logo        string `json:"logo"`
+	Website     string `json:"website"`
+}
+
+type ApplyToAllianceRequest struct {
+	Message string `json:"message"`
+}
+
+type SendBuddyRequest struct {
+	ReceiverID uint   `json:"receiver_id"`
+	Message    string `json:"message"`
+}
+
+type JumpGateRequest struct {
+	TargetMoonID uint           `json:"target_moon_id"`
+	Ships        map[string]int `json:"ships"`
+}
+
+type PhalanxScanRequest struct {
+	Galaxy   int `json:"galaxy"`
+	System   int `json:"system"`
+	Position int `json:"position"`
+}
+
 type Handlers struct {
 	buildingService       *service.BuildingService
 	researchService       *service.ResearchService
@@ -737,7 +808,7 @@ func (h *Handlers) GetPlanetBuildings(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path int true "Planet ID"
 // @Param building_id path int true "Building Type ID"
-// @Param level query int false "Building level"
+// @Param body body BuildingRequest true "Building level to construct"
 // @Success 200
 // @Failure 400
 // @Security BearerAuth
@@ -751,10 +822,6 @@ func (h *Handlers) StartBuilding(c *fiber.Ctx) error {
 	buildingID, err := c.ParamsInt("building_id")
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid building id"})
-	}
-
-	type BuildingRequest struct {
-		Level int `json:"level"`
 	}
 
 	var req BuildingRequest
@@ -858,6 +925,7 @@ func (h *Handlers) CancelBuilding(c *fiber.Ctx) error {
 // @Tags Research
 // @Accept json
 // @Produce json
+// @Param body body ResearchRequest true "Research ID to start"
 // @Security BearerAuth
 // @Success 200
 // @Failure 400
@@ -935,28 +1003,13 @@ func (h *Handlers) GetResearchQueue(c *fiber.Ctx) error {
 	})
 }
 
-type FleetRequest struct {
-	MissionType    int `json:"mission_type"`
-	OriginGalaxy   int `json:"origin_galaxy"`
-	OriginSystem   int `json:"origin_system"`
-	OriginPosition int `json:"origin_position"`
-	TargetGalaxy   int `json:"target_galaxy"`
-	TargetSystem   int `json:"target_system"`
-	TargetPosition int `json:"target_position"`
-	Resources      struct {
-		Metal     int64 `json:"metal"`
-		Crystal   int64 `json:"crystal"`
-		Deuterium int64 `json:"deuterium"`
-	} `json:"resources"`
-	Ships map[string]int `json:"ships"`
-}
-
 // SendFleet sends a fleet mission
 // @Summary Send fleet
 // @Description Send a fleet of ships on a mission (attack, transport, colonize, recycle, etc.)
 // @Tags Fleets
 // @Accept json
 // @Produce json
+// @Param body body FleetRequest true "Fleet mission details"
 // @Success 200
 // @Failure 400
 // @Security BearerAuth
@@ -1834,11 +1887,6 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 	})
 }
 
-type BuildUnitRequest struct {
-	UnitID int `json:"unit_id"`
-	Amount int `json:"amount"`
-}
-
 // BuildUnit builds a ship or defense unit
 // @Summary Build unit
 // @Description Build a ship or defense unit on a planet
@@ -1846,6 +1894,7 @@ type BuildUnitRequest struct {
 // @Accept json
 // @Produce json
 // @Param id path int true "Planet ID"
+// @Param body body BuildUnitRequest true "Unit ID and amount to build"
 // @Security BearerAuth
 // @Success 200
 // @Failure 400
@@ -2364,21 +2413,13 @@ func (h *Handlers) GetNotes(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"notes": notes})
 }
 
-type CreateNoteRequest struct {
-	Galaxy   int    `json:"galaxy"`
-	System   int    `json:"system"`
-	Position int    `json:"position"`
-	Type     int    `json:"type"`
-	Subject  string `json:"subject"`
-	Text     string `json:"text"`
-}
-
 // CreateNote creates a new note
 // @Summary Create note
 // @Description Create a new note
 // @Tags Notes
 // @Accept json
 // @Produce json
+// @Param body body CreateNoteRequest true "Note subject and text"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2416,11 +2457,6 @@ func (h *Handlers) CreateNote(c *fiber.Ctx) error {
 	})
 }
 
-type UpdateNoteRequest struct {
-	Subject string `json:"subject"`
-	Text    string `json:"text"`
-}
-
 // UpdateNote updates an existing note
 // @Summary Update note
 // @Description Update an existing note
@@ -2428,6 +2464,7 @@ type UpdateNoteRequest struct {
 // @Accept json
 // @Produce json
 // @Param id path int true "Note ID"
+// @Param body body UpdateNoteRequest true "Updated note subject and text"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2505,20 +2542,13 @@ func (h *Handlers) GetAlliances(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"alliances": alliances})
 }
 
-type CreateAllianceRequest struct {
-	Name        string `json:"name"`
-	Tag         string `json:"tag"`
-	Description string `json:"description"`
-	Logo        string `json:"logo"`
-	Website     string `json:"website"`
-}
-
 // CreateAlliance creates a new alliance
 // @Summary Create alliance
 // @Description Create a new alliance
 // @Tags Alliances
 // @Accept json
 // @Produce json
+// @Param body body CreateAllianceRequest true "Alliance details"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2585,10 +2615,6 @@ func (h *Handlers) GetAllianceMembers(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"members": members})
 }
 
-type ApplyToAllianceRequest struct {
-	Message string `json:"message"`
-}
-
 // ApplyToAlliance applies to join an alliance
 // @Summary Apply to alliance
 // @Description Apply to join an alliance
@@ -2596,6 +2622,7 @@ type ApplyToAllianceRequest struct {
 // @Accept json
 // @Produce json
 // @Param id path int true "Alliance ID"
+// @Param body body ApplyToAllianceRequest true "Application message"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2721,6 +2748,7 @@ func (h *Handlers) LeaveAlliance(c *fiber.Ctx) error {
 // @Tags Alliances
 // @Accept json
 // @Produce json
+// @Param body body CreateAllianceRequest true "Updated alliance details"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2764,17 +2792,13 @@ func (h *Handlers) GetBuddies(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"buddies": buddies})
 }
 
-type SendBuddyRequest struct {
-	ReceiverID uint   `json:"receiver_id"`
-	Message    string `json:"message"`
-}
-
 // SendBuddyRequest sends a buddy request
 // @Summary Send buddy request
 // @Description Send a buddy request to another player
 // @Tags Buddy
 // @Accept json
 // @Produce json
+// @Param body body SendBuddyRequest true "Player ID and message"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2920,11 +2944,6 @@ func (h *Handlers) GetJumpGateTargets(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"targets": targets})
 }
 
-type JumpGateRequest struct {
-	TargetMoonID uint           `json:"target_moon_id"`
-	Ships        map[string]int `json:"ships"`
-}
-
 // ExecuteJumpGate uses the jump gate to transport fleets
 // @Summary Execute jump gate
 // @Description Execute jump gate to transport fleets to another planet
@@ -2932,6 +2951,7 @@ type JumpGateRequest struct {
 // @Accept json
 // @Produce json
 // @Param id path int true "Planet ID"
+// @Param body body JumpGateRequest true "Target moon ID and ships to transport"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
@@ -2958,22 +2978,18 @@ func (h *Handlers) ExecuteJumpGate(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
-type PhalanxScanRequest struct {
-	Galaxy   int `json:"galaxy"`
-	System   int `json:"system"`
-	Position int `json:"position"`
-}
-
 // ScanWithPhalanx scans a galaxy position using phalanx
 // @Summary Scan with phalanx
 // @Description Scan a galaxy position using phalanx
 // @Tags Planets
+// @Accept json
 // @Produce json
 // @Param id path int true "Planet ID"
+// @Param body body PhalanxScanRequest true "Galaxy coordinates to scan"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401
-// @Router /planets/{id}/phalanx/scan [get]
+// @Router /planets/{id}/phalanx/scan [post]
 func (h *Handlers) ScanWithPhalanx(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -3657,8 +3673,9 @@ func (h *Handlers) GetPremiumStatus(c *fiber.Ctx) error {
 // @Summary Activate premium
 // @Description Activate premium features using dark matter
 // @Tags Premium
-// @Accept json
+// @Accept x-www-form-urlencoded
 // @Produce json
+// @Param days formData int true "Number of days to activate"
 // @Security BearerAuth
 // @Success 200
 // @Router /premium/activate [post]
@@ -3685,8 +3702,11 @@ func (h *Handlers) ActivatePremium(c *fiber.Ctx) error {
 // @Summary Merchant buy
 // @Description Buy resources from the merchant using dark matter
 // @Tags Merchant
-// @Accept json
+// @Accept x-www-form-urlencoded
 // @Produce json
+// @Param planet_id formData int true "Planet ID"
+// @Param resource_type formData string true "Resource type to buy (metal, crystal, deuterium)"
+// @Param amount formData int true "Amount to buy"
 // @Security BearerAuth
 // @Success 200
 // @Router /merchant/buy [post]
@@ -3719,8 +3739,11 @@ func (h *Handlers) MerchantBuy(c *fiber.Ctx) error {
 // @Summary Merchant sell
 // @Description Sell resources to the merchant for dark matter
 // @Tags Merchant
-// @Accept json
+// @Accept x-www-form-urlencoded
 // @Produce json
+// @Param planet_id formData int true "Planet ID"
+// @Param resource_type formData string true "Resource type to sell (metal, crystal, deuterium)"
+// @Param amount formData int true "Amount to sell"
 // @Security BearerAuth
 // @Success 200
 // @Router /merchant/sell [post]
@@ -3840,8 +3863,9 @@ func (h *Handlers) GetCharacterClass(c *fiber.Ctx) error {
 // @Summary Select character class
 // @Description Select a character class (Collector, General, Engineer)
 // @Tags Character
-// @Accept json
+// @Accept x-www-form-urlencoded
 // @Produce json
+// @Param class_id formData int true "Class ID (1=Collector, 2=General, 3=Engineer)"
 // @Security BearerAuth
 // @Success 200
 // @Failure 401

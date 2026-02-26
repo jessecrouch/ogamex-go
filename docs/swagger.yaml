@@ -1,11 +1,104 @@
 basePath: /api/v1
 definitions:
+  api.ApplyToAllianceRequest:
+    properties:
+      message:
+        type: string
+    type: object
+  api.BuildUnitRequest:
+    properties:
+      amount:
+        type: integer
+      unit_id:
+        type: integer
+    type: object
+  api.BuildingRequest:
+    properties:
+      level:
+        type: integer
+    type: object
+  api.CreateAllianceRequest:
+    properties:
+      description:
+        type: string
+      logo:
+        type: string
+      name:
+        type: string
+      tag:
+        type: string
+      website:
+        type: string
+    type: object
+  api.CreateNoteRequest:
+    properties:
+      galaxy:
+        type: integer
+      position:
+        type: integer
+      subject:
+        type: string
+      system:
+        type: integer
+      text:
+        type: string
+      type:
+        type: integer
+    type: object
+  api.FleetRequest:
+    properties:
+      mission_type:
+        type: integer
+      origin_galaxy:
+        type: integer
+      origin_position:
+        type: integer
+      origin_system:
+        type: integer
+      resources:
+        properties:
+          crystal:
+            type: integer
+          deuterium:
+            type: integer
+          metal:
+            type: integer
+        type: object
+      ships:
+        additionalProperties:
+          type: integer
+        type: object
+      target_galaxy:
+        type: integer
+      target_position:
+        type: integer
+      target_system:
+        type: integer
+    type: object
+  api.JumpGateRequest:
+    properties:
+      ships:
+        additionalProperties:
+          type: integer
+        type: object
+      target_moon_id:
+        type: integer
+    type: object
   api.LoginRequest:
     properties:
       password:
         type: string
       username:
         type: string
+    type: object
+  api.PhalanxScanRequest:
+    properties:
+      galaxy:
+        type: integer
+      position:
+        type: integer
+      system:
+        type: integer
     type: object
   api.RegisterRequest:
     properties:
@@ -16,6 +109,25 @@ definitions:
       player_name:
         type: string
       username:
+        type: string
+    type: object
+  api.ResearchRequest:
+    properties:
+      research_id:
+        type: integer
+    type: object
+  api.SendBuddyRequest:
+    properties:
+      message:
+        type: string
+      receiver_id:
+        type: integer
+    type: object
+  api.UpdateNoteRequest:
+    properties:
+      subject:
+        type: string
+      text:
         type: string
     type: object
 externalDocs:
@@ -143,6 +255,13 @@ paths:
       consumes:
       - application/json
       description: Create a new alliance
+      parameters:
+      - description: Alliance details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateAllianceRequest'
       produces:
       - application/json
       responses:
@@ -159,6 +278,13 @@ paths:
       consumes:
       - application/json
       description: Update alliance settings
+      parameters:
+      - description: Updated alliance details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateAllianceRequest'
       produces:
       - application/json
       responses:
@@ -224,6 +350,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Application message
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ApplyToAllianceRequest'
       produces:
       - application/json
       responses:
@@ -472,6 +604,13 @@ paths:
       consumes:
       - application/json
       description: Send a buddy request to another player
+      parameters:
+      - description: Player ID and message
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.SendBuddyRequest'
       produces:
       - application/json
       responses:
@@ -531,8 +670,14 @@ paths:
   /character-class/select:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Select a character class (Collector, General, Engineer)
+      parameters:
+      - description: Class ID (1=Collector, 2=General, 3=Engineer)
+        in: formData
+        name: class_id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -774,6 +919,13 @@ paths:
       - application/json
       description: Send a fleet of ships on a mission (attack, transport, colonize,
         recycle, etc.)
+      parameters:
+      - description: Fleet mission details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.FleetRequest'
       produces:
       - application/json
       responses:
@@ -848,8 +1000,24 @@ paths:
   /merchant/buy:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Buy resources from the merchant using dark matter
+      parameters:
+      - description: Planet ID
+        in: formData
+        name: planet_id
+        required: true
+        type: integer
+      - description: Resource type to buy (metal, crystal, deuterium)
+        in: formData
+        name: resource_type
+        required: true
+        type: string
+      - description: Amount to buy
+        in: formData
+        name: amount
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -863,8 +1031,24 @@ paths:
   /merchant/sell:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Sell resources to the merchant for dark matter
+      parameters:
+      - description: Planet ID
+        in: formData
+        name: planet_id
+        required: true
+        type: integer
+      - description: Resource type to sell (metal, crystal, deuterium)
+        in: formData
+        name: resource_type
+        required: true
+        type: string
+      - description: Amount to sell
+        in: formData
+        name: amount
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -977,6 +1161,13 @@ paths:
       consumes:
       - application/json
       description: Create a new note
+      parameters:
+      - description: Note subject and text
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateNoteRequest'
       produces:
       - application/json
       responses:
@@ -1020,6 +1211,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Updated note subject and text
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateNoteRequest'
       produces:
       - application/json
       responses:
@@ -1189,10 +1386,12 @@ paths:
         name: building_id
         required: true
         type: integer
-      - description: Building level
-        in: query
-        name: level
-        type: integer
+      - description: Building level to construct
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.BuildingRequest'
       produces:
       - application/json
       responses:
@@ -1260,6 +1459,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Target moon ID and ships to transport
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.JumpGateRequest'
       produces:
       - application/json
       responses:
@@ -1339,7 +1544,9 @@ paths:
       tags:
       - Planets
   /planets/{id}/phalanx/scan:
-    get:
+    post:
+      consumes:
+      - application/json
       description: Scan a galaxy position using phalanx
       parameters:
       - description: Planet ID
@@ -1347,6 +1554,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Galaxy coordinates to scan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.PhalanxScanRequest'
       produces:
       - application/json
       responses:
@@ -1479,6 +1692,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Unit ID and amount to build
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.BuildUnitRequest'
       produces:
       - application/json
       responses:
@@ -1530,8 +1749,14 @@ paths:
   /premium/activate:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Activate premium features using dark matter
+      parameters:
+      - description: Number of days to activate
+        in: formData
+        name: days
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1632,6 +1857,13 @@ paths:
       consumes:
       - application/json
       description: Start a research project
+      parameters:
+      - description: Research ID to start
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResearchRequest'
       produces:
       - application/json
       responses:

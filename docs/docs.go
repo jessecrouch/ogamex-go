@@ -208,6 +208,17 @@ const docTemplate = `{
                     "Alliances"
                 ],
                 "summary": "Update alliance",
+                "parameters": [
+                    {
+                        "description": "Updated alliance details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateAllianceRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -234,6 +245,17 @@ const docTemplate = `{
                     "Alliances"
                 ],
                 "summary": "Create alliance",
+                "parameters": [
+                    {
+                        "description": "Alliance details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateAllianceRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -430,6 +452,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Application message",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ApplyToAllianceRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -635,6 +666,17 @@ const docTemplate = `{
                     "Buddy"
                 ],
                 "summary": "Send buddy request",
+                "parameters": [
+                    {
+                        "description": "Player ID and message",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SendBuddyRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -824,7 +866,7 @@ const docTemplate = `{
                 ],
                 "description": "Select a character class (Collector, General, Engineer)",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -833,6 +875,15 @@ const docTemplate = `{
                     "Character"
                 ],
                 "summary": "Select character class",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Class ID (1=Collector, 2=General, 3=Engineer)",
+                        "name": "class_id",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1184,6 +1235,17 @@ const docTemplate = `{
                     "Fleets"
                 ],
                 "summary": "Send fleet",
+                "parameters": [
+                    {
+                        "description": "Fleet mission details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.FleetRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1329,7 +1391,7 @@ const docTemplate = `{
                 ],
                 "description": "Buy resources from the merchant using dark matter",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -1338,6 +1400,29 @@ const docTemplate = `{
                     "Merchant"
                 ],
                 "summary": "Merchant buy",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Planet ID",
+                        "name": "planet_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource type to buy (metal, crystal, deuterium)",
+                        "name": "resource_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Amount to buy",
+                        "name": "amount",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1354,7 +1439,7 @@ const docTemplate = `{
                 ],
                 "description": "Sell resources to the merchant for dark matter",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -1363,6 +1448,29 @@ const docTemplate = `{
                     "Merchant"
                 ],
                 "summary": "Merchant sell",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Planet ID",
+                        "name": "planet_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource type to sell (metal, crystal, deuterium)",
+                        "name": "resource_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Amount to sell",
+                        "name": "amount",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1546,6 +1654,17 @@ const docTemplate = `{
                     "Notes"
                 ],
                 "summary": "Create note",
+                "parameters": [
+                    {
+                        "description": "Note subject and text",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateNoteRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1581,6 +1700,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Updated note subject and text",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateNoteRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -1889,10 +2017,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Building level",
-                        "name": "level",
-                        "in": "query"
+                        "description": "Building level to construct",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.BuildingRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2001,6 +2132,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Target moon ID and ships to transport",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.JumpGateRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2119,13 +2259,16 @@ const docTemplate = `{
             }
         },
         "/planets/{id}/phalanx/scan": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
                 "description": "Scan a galaxy position using phalanx",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2140,6 +2283,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Galaxy coordinates to scan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.PhalanxScanRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2353,6 +2505,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Unit ID and amount to build",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.BuildUnitRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2433,7 +2594,7 @@ const docTemplate = `{
                 ],
                 "description": "Activate premium features using dark matter",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -2442,6 +2603,15 @@ const docTemplate = `{
                     "Premium"
                 ],
                 "summary": "Activate premium",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of days to activate",
+                        "name": "days",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -2577,6 +2747,17 @@ const docTemplate = `{
                     "Research"
                 ],
                 "summary": "Start research",
+                "parameters": [
+                    {
+                        "description": "Research ID to start",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ResearchRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -2977,6 +3158,136 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.ApplyToAllianceRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.BuildUnitRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "unit_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.BuildingRequest": {
+            "type": "object",
+            "properties": {
+                "level": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.CreateAllianceRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateNoteRequest": {
+            "type": "object",
+            "properties": {
+                "galaxy": {
+                    "type": "integer"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "system": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.FleetRequest": {
+            "type": "object",
+            "properties": {
+                "mission_type": {
+                    "type": "integer"
+                },
+                "origin_galaxy": {
+                    "type": "integer"
+                },
+                "origin_position": {
+                    "type": "integer"
+                },
+                "origin_system": {
+                    "type": "integer"
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "crystal": {
+                            "type": "integer"
+                        },
+                        "deuterium": {
+                            "type": "integer"
+                        },
+                        "metal": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "ships": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "target_galaxy": {
+                    "type": "integer"
+                },
+                "target_position": {
+                    "type": "integer"
+                },
+                "target_system": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.JumpGateRequest": {
+            "type": "object",
+            "properties": {
+                "ships": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "target_moon_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.LoginRequest": {
             "type": "object",
             "properties": {
@@ -2985,6 +3296,20 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "api.PhalanxScanRequest": {
+            "type": "object",
+            "properties": {
+                "galaxy": {
+                    "type": "integer"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "system": {
+                    "type": "integer"
                 }
             }
         },
@@ -3001,6 +3326,36 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ResearchRequest": {
+            "type": "object",
+            "properties": {
+                "research_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.SendBuddyRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "receiver_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.UpdateNoteRequest": {
+            "type": "object",
+            "properties": {
+                "subject": {
+                    "type": "string"
+                },
+                "text": {
                     "type": "string"
                 }
             }

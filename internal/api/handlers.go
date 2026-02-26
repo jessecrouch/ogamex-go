@@ -81,6 +81,11 @@ func NewHandlers(
 }
 
 func (h *Handlers) SetupRoutes(app *fiber.App) {
+	// TEST ROUTE - should be completely public
+	app.Get("/test", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"message": "test works"})
+	})
+	
 	api := app.Group("/api/v1")
 
 	api.Get("/status", h.GetStatus)
@@ -90,7 +95,19 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 
 	api.Post("/battle/simulate", h.SimulateBattle)
 
-	// Create protected group FIRST with auth middleware
+	// Reference data endpoints (public, no auth required)
+	api.Get("/buildings", h.GetBuildings)
+	api.Get("/buildings/:id", h.GetBuilding)
+	api.Get("/ships", h.GetShips)
+	api.Get("/ships/:id", h.GetShip)
+	api.Get("/defense", h.GetDefense)
+	api.Get("/defense/:id", h.GetDefenseUnit)
+	api.Get("/research", h.GetResearch)
+	api.Get("/research/:id", h.GetResearchType)
+	api.Get("/missions", h.GetMissions)
+	api.Get("/game", h.GetGame)
+
+	// Protected routes - these require auth
 	protected := api.Group("", h.authMiddleware)
 
 	protected.Get("/user", h.GetUser)
@@ -125,6 +142,13 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	protected.Post("/planets/:id/units/build", h.BuildUnit)
 	protected.Get("/planets/:id/units/queue", h.GetUnitQueue)
 	protected.Delete("/units/queue/:id", h.CancelUnit)
+
+	// NEW: Ship building endpoints (cleaner URLs)
+	protected.Post("/planets/:id/ships/:ship_id", h.BuildUnit)
+	protected.Get("/planets/:id/ships", h.GetPlanetShips)
+
+	// NEW: Defense building endpoints
+	protected.Post("/planets/:id/defense/:defense_id", h.BuildUnit)
 	protected.Get("/units/available", h.GetAvailableUnits)
 	protected.Get("/planets/:id/units", h.GetPlanetShips)
 	protected.Get("/planets/:id/defense", h.GetPlanetDefense)
@@ -265,6 +289,14 @@ func (h *Handlers) adminMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// FixPlanets fixes planet data (admin only)
+// @Summary Fix planets
+// @Description Fix planet data - admin utility endpoint
+// @Tags Admin
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /admin/fix-planets [post]
 func (h *Handlers) FixPlanets(c *fiber.Ctx) error {
 	count, err := h.planetRepo.FixProductionPercentages(c.Context())
 	if err != nil {
@@ -277,6 +309,14 @@ func (h *Handlers) FixPlanets(c *fiber.Ctx) error {
 	})
 }
 
+// FixProductionPercentages fixes production percentages (debug only)
+// @Summary Fix production
+// @Description Fix production percentages - debug utility endpoint
+// @Tags Debug
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /debug/fix-production [post]
 func (h *Handlers) FixProductionPercentages(c *fiber.Ctx) error {
 	count, err := h.planetRepo.FixProductionPercentages(c.Context())
 	if err != nil {
@@ -289,6 +329,13 @@ func (h *Handlers) FixProductionPercentages(c *fiber.Ctx) error {
 	})
 }
 
+// GetStatus returns server status and version information
+// @Summary Get server status
+// @Description Get server status and version information
+// @Tags Server
+// @Produce json
+// @Success 200
+// @Router /status [get]
 func (h *Handlers) GetStatus(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"online":    true,
@@ -299,6 +346,15 @@ func (h *Handlers) GetStatus(c *fiber.Ctx) error {
 	})
 }
 
+// GetUser returns the current user's information
+// @Summary Get current user
+// @Description Get current user information
+// @Tags User
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /user [get]
 func (h *Handlers) GetUser(c *fiber.Ctx) error {
 	user := c.Locals("user")
 	if user == nil {
@@ -318,6 +374,15 @@ func (h *Handlers) GetUser(c *fiber.Ctx) error {
 	})
 }
 
+// GetUserStats returns statistics for the current user
+// @Summary Get user stats
+// @Description Get user statistics including total resources across all planets
+// @Tags User
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /user/stats [get]
 func (h *Handlers) GetUserStats(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -351,6 +416,15 @@ func (h *Handlers) GetUserStats(c *fiber.Ctx) error {
 	})
 }
 
+// GetUserPlanets returns all planets owned by the current user
+// @Summary Get user planets
+// @Description Get all planets owned by the current user
+// @Tags Planets
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets [get]
 func (h *Handlers) GetUserPlanets(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -388,6 +462,17 @@ func (h *Handlers) GetUserPlanets(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanet returns basic information about a specific planet
+// @Summary Get planet
+// @Description Get basic planet information
+// @Tags Planets
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Failure 404
+// @Router /planets/{id} [get]
 func (h *Handlers) GetPlanet(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -409,6 +494,17 @@ func (h *Handlers) GetPlanet(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanetDetails returns detailed information about a planet
+// @Summary Get planet details
+// @Description Get detailed planet information including buildings and resources
+// @Tags Planets
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Failure 404
+// @Router /planets/{id}/details [get]
 func (h *Handlers) GetPlanetDetails(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -445,6 +541,18 @@ func (h *Handlers) GetPlanetDetails(c *fiber.Ctx) error {
 	})
 }
 
+// SetCurrentPlanet sets the specified planet as the user's current active planet
+// @Summary Set current planet
+// @Description Set a planet as the current active planet
+// @Tags Planets
+// @Accept json
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Failure 404
+// @Router /planets/{id}/set-current [put]
 func (h *Handlers) SetCurrentPlanet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -544,6 +652,16 @@ func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanetResources returns current resources on a planet
+// @Summary Get planet resources
+// @Description Get current resources on a planet
+// @Tags Planets
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/resources [get]
 func (h *Handlers) GetPlanetResources(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -567,6 +685,16 @@ func (h *Handlers) GetPlanetResources(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanetBuildings returns all buildings on a planet with their levels
+// @Summary Get planet buildings
+// @Description Get all buildings on a planet with their levels
+// @Tags Buildings
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/buildings [get]
 func (h *Handlers) GetPlanetBuildings(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -609,7 +737,7 @@ func (h *Handlers) GetPlanetBuildings(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path int true "Planet ID"
 // @Param building_id path int true "Building Type ID"
-// @Param level query int false "Building level (default: 1)"
+// @Param level query int false "Building level"
 // @Success 200
 // @Failure 400
 // @Security BearerAuth
@@ -651,6 +779,16 @@ func (h *Handlers) StartBuilding(c *fiber.Ctx) error {
 	})
 }
 
+// GetBuildingQueue returns the building queue for a planet
+// @Summary Get building queue
+// @Description Get building queue for a planet
+// @Tags Buildings
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/queue [get]
 func (h *Handlers) GetBuildingQueue(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -687,6 +825,16 @@ func (h *Handlers) GetBuildingQueue(c *fiber.Ctx) error {
 	})
 }
 
+// CancelBuilding cancels a building in the queue
+// @Summary Cancel building
+// @Description Cancel a building in the construction queue
+// @Tags Buildings
+// @Produce json
+// @Param id path int true "Queue ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /queue/{id} [delete]
 func (h *Handlers) CancelBuilding(c *fiber.Ctx) error {
 	queueID, err := c.ParamsInt("id")
 	if err != nil {
@@ -704,6 +852,17 @@ func (h *Handlers) CancelBuilding(c *fiber.Ctx) error {
 	})
 }
 
+// StartResearch starts a research project
+// @Summary Start research
+// @Description Start a research project
+// @Tags Research
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 400
+// @Failure 401
+// @Router /research/start [post]
 func (h *Handlers) StartResearch(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -731,6 +890,15 @@ func (h *Handlers) StartResearch(c *fiber.Ctx) error {
 	})
 }
 
+// GetResearchQueue returns the research queue for the current user
+// @Summary Get research queue
+// @Description Get research queue for the current user
+// @Tags Research
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /research/queue [get]
 func (h *Handlers) GetResearchQueue(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -842,6 +1010,15 @@ func (h *Handlers) SendFleet(c *fiber.Ctx) error {
 	})
 }
 
+// GetFleets returns all active fleet missions for the current user
+// @Summary Get fleets
+// @Description Get all active fleet missions for the current user
+// @Tags Fleets
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /fleets [get]
 func (h *Handlers) GetFleets(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -1507,6 +1684,16 @@ func getShipCost(shipID int16) shipCost {
 	return shipCost{Metal: 0, Crystal: 0}
 }
 
+// RecallFleet recalls a fleet mission
+// @Summary Recall fleet
+// @Description Recall a fleet mission that is currently in progress
+// @Tags Fleets
+// @Produce json
+// @Param id path int true "Fleet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /fleets/{id}/recall [post]
 func (h *Handlers) RecallFleet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -1529,6 +1716,16 @@ func (h *Handlers) RecallFleet(c *fiber.Ctx) error {
 	})
 }
 
+// CancelResearch cancels a research in the queue
+// @Summary Cancel research
+// @Description Cancel a research in the queue
+// @Tags Research
+// @Produce json
+// @Param id path int true "Queue ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /research/queue/{id} [delete]
 func (h *Handlers) CancelResearch(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -1564,10 +1761,7 @@ type RegisterRequest struct {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param username query string true "Username"
-// @Param password query string true "Password"
-// @Param player_name query string false "Player name (defaults to username)"
-// @Param email query string false "Email address"
+// @Param body body RegisterRequest true "Register request"
 // @Success 201
 // @Failure 400
 // @Router /auth/register [post]
@@ -1614,8 +1808,7 @@ type LoginRequest struct {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param username query string true "Username"
-// @Param password query string true "Password"
+// @Param body body LoginRequest true "Login request"
 // @Success 200
 // @Failure 401
 // @Router /auth/login [post]
@@ -1646,6 +1839,18 @@ type BuildUnitRequest struct {
 	Amount int `json:"amount"`
 }
 
+// BuildUnit builds a ship or defense unit
+// @Summary Build unit
+// @Description Build a ship or defense unit on a planet
+// @Tags Units
+// @Accept json
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 400
+// @Failure 401
+// @Router /planets/{id}/units/build [post]
 func (h *Handlers) BuildUnit(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -1700,6 +1905,16 @@ func (h *Handlers) BuildUnit(c *fiber.Ctx) error {
 	})
 }
 
+// GetUnitQueue returns the unit production queue for a planet
+// @Summary Get unit queue
+// @Description Get unit production queue for a planet
+// @Tags Units
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/units/queue [get]
 func (h *Handlers) GetUnitQueue(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1736,6 +1951,16 @@ func (h *Handlers) GetUnitQueue(c *fiber.Ctx) error {
 	})
 }
 
+// CancelUnit cancels a unit in the production queue
+// @Summary Cancel unit
+// @Description Cancel a unit in the production queue
+// @Tags Units
+// @Produce json
+// @Param id path int true "Queue ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /units/queue/{id} [delete]
 func (h *Handlers) CancelUnit(c *fiber.Ctx) error {
 	queueID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1753,6 +1978,15 @@ func (h *Handlers) CancelUnit(c *fiber.Ctx) error {
 	})
 }
 
+// GetAvailableUnits returns all units that can be built
+// @Summary Get available units
+// @Description Get all units (ships and defense) that can be built
+// @Tags Units
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /units/available [get]
 func (h *Handlers) GetAvailableUnits(c *fiber.Ctx) error {
 	type UnitInfo struct {
 		ID          int    `json:"id"`
@@ -1798,6 +2032,16 @@ func (h *Handlers) GetAvailableUnits(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanetShips returns all ships on a planet
+// @Summary Get planet ships
+// @Description Get all ships on a planet
+// @Tags Units
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/units [get]
 func (h *Handlers) GetPlanetShips(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1833,6 +2077,16 @@ func (h *Handlers) GetPlanetShips(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanetDefense returns all defense units on a planet
+// @Summary Get planet defense
+// @Description Get all defense units on a planet
+// @Tags Defense
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/defense [get]
 func (h *Handlers) GetPlanetDefense(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1860,6 +2114,16 @@ func (h *Handlers) GetPlanetDefense(c *fiber.Ctx) error {
 	})
 }
 
+// GetPlanetProduction returns production rates for a planet
+// @Summary Get planet production
+// @Description Get production rates for a planet
+// @Tags Planets
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/production [get]
 func (h *Handlers) GetPlanetProduction(c *fiber.Ctx) error {
 	planetID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1892,6 +2156,15 @@ func (h *Handlers) GetPlanetProduction(c *fiber.Ctx) error {
 	})
 }
 
+// GetMessages returns all messages for the current user
+// @Summary Get messages
+// @Description Get all messages for the current user
+// @Tags Messages
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /messages [get]
 func (h *Handlers) GetMessages(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -1913,6 +2186,15 @@ func (h *Handlers) GetMessages(c *fiber.Ctx) error {
 	})
 }
 
+// GetUnreadCount returns the count of unread messages
+// @Summary Get unread count
+// @Description Get count of unread messages
+// @Tags Messages
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /messages/unread [get]
 func (h *Handlers) GetUnreadCount(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -1929,6 +2211,16 @@ func (h *Handlers) GetUnreadCount(c *fiber.Ctx) error {
 	})
 }
 
+// MarkMessageRead marks a message as read
+// @Summary Mark message read
+// @Description Mark a message as read
+// @Tags Messages
+// @Produce json
+// @Param id path int true "Message ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /messages/{id}/read [post]
 func (h *Handlers) MarkMessageRead(c *fiber.Ctx) error {
 	messageID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1943,6 +2235,16 @@ func (h *Handlers) MarkMessageRead(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// DeleteMessage deletes a message
+// @Summary Delete message
+// @Description Delete a message
+// @Tags Messages
+// @Produce json
+// @Param id path int true "Message ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /messages/{id} [delete]
 func (h *Handlers) DeleteMessage(c *fiber.Ctx) error {
 	messageID, err := c.ParamsInt("id")
 	if err != nil {
@@ -1957,6 +2259,17 @@ func (h *Handlers) DeleteMessage(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetGalaxy returns galaxy information for a system
+// @Summary Get galaxy
+// @Description Get galaxy information for a system
+// @Tags Galaxy
+// @Produce json
+// @Param galaxy path int true "Galaxy"
+// @Param system path int true "System"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /galaxy/{galaxy}/{system} [get]
 func (h *Handlers) GetGalaxy(c *fiber.Ctx) error {
 	galaxy, err := c.ParamsInt("galaxy")
 	if err != nil {
@@ -1988,6 +2301,16 @@ func (h *Handlers) GetGalaxy(c *fiber.Ctx) error {
 	})
 }
 
+// GetHighscore returns highscore rankings
+// @Summary Get highscore
+// @Description Get highscore rankings
+// @Tags Highscore
+// @Produce json
+// @Param category path int true "Category (0=Total, 1=Economy, 2=Research, 3=Military, 4=Military Built, 5=Military Destroyed, 6=Military Lost, 7=Honor)"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /highscore/{category} [get]
 func (h *Handlers) GetHighscore(c *fiber.Ctx) error {
 	category := c.Params("category")
 	if category == "" {
@@ -2018,6 +2341,15 @@ func (h *Handlers) GetHighscore(c *fiber.Ctx) error {
 	})
 }
 
+// GetNotes returns all notes for the current user
+// @Summary Get notes
+// @Description Get all notes for the current user
+// @Tags Notes
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /notes [get]
 func (h *Handlers) GetNotes(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2041,6 +2373,16 @@ type CreateNoteRequest struct {
 	Text     string `json:"text"`
 }
 
+// CreateNote creates a new note
+// @Summary Create note
+// @Description Create a new note
+// @Tags Notes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /notes [post]
 func (h *Handlers) CreateNote(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2079,6 +2421,17 @@ type UpdateNoteRequest struct {
 	Text    string `json:"text"`
 }
 
+// UpdateNote updates an existing note
+// @Summary Update note
+// @Description Update an existing note
+// @Tags Notes
+// @Accept json
+// @Produce json
+// @Param id path int true "Note ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /notes/{id} [put]
 func (h *Handlers) UpdateNote(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2106,6 +2459,16 @@ func (h *Handlers) UpdateNote(c *fiber.Ctx) error {
 	})
 }
 
+// DeleteNote deletes a note
+// @Summary Delete note
+// @Description Delete a note
+// @Tags Notes
+// @Produce json
+// @Param id path int true "Note ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /notes/{id} [delete]
 func (h *Handlers) DeleteNote(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2125,6 +2488,15 @@ func (h *Handlers) DeleteNote(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetAlliances returns list of alliances
+// @Summary Get alliances
+// @Description Get list of alliances
+// @Tags Alliances
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances [get]
 func (h *Handlers) GetAlliances(c *fiber.Ctx) error {
 	alliances, err := h.allianceService.GetAllAlliances(c.Context())
 	if err != nil {
@@ -2141,6 +2513,16 @@ type CreateAllianceRequest struct {
 	Website     string `json:"website"`
 }
 
+// CreateAlliance creates a new alliance
+// @Summary Create alliance
+// @Description Create a new alliance
+// @Tags Alliances
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances [post]
 func (h *Handlers) CreateAlliance(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2159,6 +2541,16 @@ func (h *Handlers) CreateAlliance(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "alliance": alliance})
 }
 
+// GetAlliance returns information about a specific alliance
+// @Summary Get alliance
+// @Description Get information about a specific alliance
+// @Tags Alliances
+// @Produce json
+// @Param id path int true "Alliance ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/{id} [get]
 func (h *Handlers) GetAlliance(c *fiber.Ctx) error {
 	allianceID, err := c.ParamsInt("id")
 	if err != nil {
@@ -2171,6 +2563,16 @@ func (h *Handlers) GetAlliance(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"alliance": alliance})
 }
 
+// GetAllianceMembers returns members of an alliance
+// @Summary Get alliance members
+// @Description Get members of an alliance
+// @Tags Alliances
+// @Produce json
+// @Param id path int true "Alliance ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/{id}/members [get]
 func (h *Handlers) GetAllianceMembers(c *fiber.Ctx) error {
 	allianceID, err := c.ParamsInt("id")
 	if err != nil {
@@ -2187,6 +2589,17 @@ type ApplyToAllianceRequest struct {
 	Message string `json:"message"`
 }
 
+// ApplyToAlliance applies to join an alliance
+// @Summary Apply to alliance
+// @Description Apply to join an alliance
+// @Tags Alliances
+// @Accept json
+// @Produce json
+// @Param id path int true "Alliance ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/{id}/apply [post]
 func (h *Handlers) ApplyToAlliance(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2207,6 +2620,16 @@ func (h *Handlers) ApplyToAlliance(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetAllianceApplications returns applications to join an alliance
+// @Summary Get alliance applications
+// @Description Get applications to join an alliance
+// @Tags Alliances
+// @Produce json
+// @Param id path int true "Alliance ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/{id}/applications [get]
 func (h *Handlers) GetAllianceApplications(c *fiber.Ctx) error {
 	allianceID, err := c.ParamsInt("id")
 	if err != nil {
@@ -2219,6 +2642,16 @@ func (h *Handlers) GetAllianceApplications(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"applications": apps})
 }
 
+// AcceptApplication accepts a player into the alliance
+// @Summary Accept application
+// @Description Accept a player into the alliance
+// @Tags Alliances
+// @Produce json
+// @Param id path int true "Application ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/applications/{id}/accept [post]
 func (h *Handlers) AcceptApplication(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2235,6 +2668,16 @@ func (h *Handlers) AcceptApplication(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// RejectApplication rejects a player from joining the alliance
+// @Summary Reject application
+// @Description Reject a player from joining the alliance
+// @Tags Alliances
+// @Produce json
+// @Param id path int true "Application ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/applications/{id}/reject [post]
 func (h *Handlers) RejectApplication(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2251,6 +2694,15 @@ func (h *Handlers) RejectApplication(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// LeaveAlliance leaves the current alliance
+// @Summary Leave alliance
+// @Description Leave the current alliance
+// @Tags Alliances
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances/leave [post]
 func (h *Handlers) LeaveAlliance(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2263,6 +2715,16 @@ func (h *Handlers) LeaveAlliance(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// UpdateAlliance updates alliance settings
+// @Summary Update alliance
+// @Description Update alliance settings
+// @Tags Alliances
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /alliances [put]
 func (h *Handlers) UpdateAlliance(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2281,6 +2743,15 @@ func (h *Handlers) UpdateAlliance(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetBuddies returns buddy list for the current user
+// @Summary Get buddies
+// @Description Get buddy list for the current user
+// @Tags Buddy
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /buddy [get]
 func (h *Handlers) GetBuddies(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2298,6 +2769,16 @@ type SendBuddyRequest struct {
 	Message    string `json:"message"`
 }
 
+// SendBuddyRequest sends a buddy request
+// @Summary Send buddy request
+// @Description Send a buddy request to another player
+// @Tags Buddy
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /buddy/request [post]
 func (h *Handlers) SendBuddyRequest(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2314,6 +2795,15 @@ func (h *Handlers) SendBuddyRequest(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetPendingBuddyRequests returns pending buddy requests
+// @Summary Get pending buddy requests
+// @Description Get pending buddy requests
+// @Tags Buddy
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /buddy/pending [get]
 func (h *Handlers) GetPendingBuddyRequests(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2326,6 +2816,16 @@ func (h *Handlers) GetPendingBuddyRequests(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"requests": requests})
 }
 
+// AcceptBuddyRequest accepts a buddy request
+// @Summary Accept buddy request
+// @Description Accept a buddy request
+// @Tags Buddy
+// @Produce json
+// @Param id path int true "Request ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /buddy/{id}/accept [post]
 func (h *Handlers) AcceptBuddyRequest(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2342,6 +2842,16 @@ func (h *Handlers) AcceptBuddyRequest(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// RejectBuddyRequest rejects a buddy request
+// @Summary Reject buddy request
+// @Description Reject a buddy request
+// @Tags Buddy
+// @Produce json
+// @Param id path int true "Request ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /buddy/{id}/reject [post]
 func (h *Handlers) RejectBuddyRequest(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2358,6 +2868,16 @@ func (h *Handlers) RejectBuddyRequest(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// RemoveBuddy removes a buddy from the list
+// @Summary Remove buddy
+// @Description Remove a buddy from the list
+// @Tags Buddy
+// @Produce json
+// @Param id path int true "Buddy ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /buddy/{id} [delete]
 func (h *Handlers) RemoveBuddy(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2374,6 +2894,16 @@ func (h *Handlers) RemoveBuddy(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetJumpGateTargets returns available jump gate targets
+// @Summary Get jump gate targets
+// @Description Get available jump gate targets
+// @Tags Planets
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/jump-gate/targets [get]
 func (h *Handlers) GetJumpGateTargets(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2395,6 +2925,17 @@ type JumpGateRequest struct {
 	Ships        map[string]int    `json:"ships"`
 }
 
+// ExecuteJumpGate uses the jump gate to transport fleets
+// @Summary Execute jump gate
+// @Description Execute jump gate to transport fleets to another planet
+// @Tags Planets
+// @Accept json
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/jump-gate/execute [post]
 func (h *Handlers) ExecuteJumpGate(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2423,6 +2964,16 @@ type PhalanxScanRequest struct {
 	Position int `json:"position"`
 }
 
+// ScanWithPhalanx scans a galaxy position using phalanx
+// @Summary Scan with phalanx
+// @Description Scan a galaxy position using phalanx
+// @Tags Planets
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /planets/{id}/phalanx/scan [get]
 func (h *Handlers) ScanWithPhalanx(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2443,6 +2994,15 @@ func (h *Handlers) ScanWithPhalanx(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"result": result})
 }
 
+// GetEspionageReports returns espionage reports
+// @Summary Get espionage reports
+// @Description Get espionage reports for the current user
+// @Tags Espionage
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /espionage [get]
 func (h *Handlers) GetEspionageReports(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2457,6 +3017,15 @@ func (h *Handlers) GetEspionageReports(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"reports": reports, "limit": limit, "offset": offset})
 }
 
+// GetEspionageUnreadCount returns count of unread espionage reports
+// @Summary Get espionage unread count
+// @Description Get count of unread espionage reports
+// @Tags Espionage
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /espionage/unread [get]
 func (h *Handlers) GetEspionageUnreadCount(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2469,6 +3038,16 @@ func (h *Handlers) GetEspionageUnreadCount(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"unread_count": count})
 }
 
+// MarkEspionageReportRead marks an espionage report as read
+// @Summary Mark espionage report read
+// @Description Mark an espionage report as read
+// @Tags Espionage
+// @Produce json
+// @Param id path int true "Report ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /espionage/{id}/read [post]
 func (h *Handlers) MarkEspionageReportRead(c *fiber.Ctx) error {
 	reportID, err := c.ParamsInt("id")
 	if err != nil {
@@ -2481,6 +3060,16 @@ func (h *Handlers) MarkEspionageReportRead(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// DeleteEspionageReport deletes an espionage report
+// @Summary Delete espionage report
+// @Description Delete an espionage report
+// @Tags Espionage
+// @Produce json
+// @Param id path int true "Report ID"
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /espionage/{id} [delete]
 func (h *Handlers) DeleteEspionageReport(c *fiber.Ctx) error {
 	reportID, err := c.ParamsInt("id")
 	if err != nil {
@@ -2493,6 +3082,15 @@ func (h *Handlers) DeleteEspionageReport(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+// GetVacationStatus returns the vacation mode status for the current user
+// @Summary Get vacation status
+// @Description Get vacation mode status for current user
+// @Tags User
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /user/vacation [get]
 func (h *Handlers) GetVacationStatus(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2505,6 +3103,15 @@ func (h *Handlers) GetVacationStatus(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"on_vacation": onVacation, "vacation_end_time": endTime})
 }
 
+// EnableVacationMode enables vacation mode for the current user
+// @Summary Enable vacation mode
+// @Description Enable vacation mode - protects planets while player is away
+// @Tags User
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /user/vacation/enable [post]
 func (h *Handlers) EnableVacationMode(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2517,6 +3124,15 @@ func (h *Handlers) EnableVacationMode(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "on_vacation": true})
 }
 
+// DisableVacationMode disables vacation mode for the current user
+// @Summary Disable vacation mode
+// @Description Disable vacation mode
+// @Tags User
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /user/vacation/disable [post]
 func (h *Handlers) DisableVacationMode(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2529,6 +3145,14 @@ func (h *Handlers) DisableVacationMode(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "on_vacation": false})
 }
 
+// GetDebrisFields returns all debris fields in the universe
+// @Summary Get debris fields
+// @Description Get all debris fields in the universe
+// @Tags Debris
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /debris [get]
 func (h *Handlers) GetDebrisFields(c *fiber.Ctx) error {
 	debris, err := h.debrisService.GetDebrisFields(c.Context())
 	if err != nil {
@@ -2537,6 +3161,17 @@ func (h *Handlers) GetDebrisFields(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": debris})
 }
 
+// GetDebrisField returns debris field at specific coordinates
+// @Summary Get debris field
+// @Description Get debris field at specific coordinates
+// @Tags Debris
+// @Produce json
+// @Param galaxy path int true "Galaxy"
+// @Param system path int true "System"
+// @Param position path int true "Position"
+// @Security BearerAuth
+// @Success 200
+// @Router /debris/{galaxy}/{system}/{position} [get]
 func (h *Handlers) GetDebrisField(c *fiber.Ctx) error {
 	galaxy, err := strconv.Atoi(c.Params("galaxy"))
 	if err != nil {
@@ -2558,6 +3193,18 @@ func (h *Handlers) GetDebrisField(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": debris})
 }
 
+// CollectDebris sends a recycler fleet to collect debris
+// @Summary Collect debris
+// @Description Send a recycler fleet to collect debris at specific coordinates
+// @Tags Debris
+// @Accept json
+// @Produce json
+// @Param galaxy path int true "Galaxy"
+// @Param system path int true "System"
+// @Param position path int true "Position"
+// @Security BearerAuth
+// @Success 200
+// @Router /debris/{galaxy}/{system}/{position}/collect [post]
 func (h *Handlers) CollectDebris(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2597,6 +3244,14 @@ func (h *Handlers) CollectDebris(c *fiber.Ctx) error {
 	})
 }
 
+// GetWreckFields returns all wreck fields in the universe
+// @Summary Get wreck fields
+// @Description Get all wreck fields in the universe
+// @Tags Wrecks
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /wrecks [get]
 func (h *Handlers) GetWreckFields(c *fiber.Ctx) error {
 	wrecks, err := h.debrisService.GetWreckFields(c.Context())
 	if err != nil {
@@ -2605,6 +3260,17 @@ func (h *Handlers) GetWreckFields(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": wrecks})
 }
 
+// GetWreckField returns wreck field at specific coordinates
+// @Summary Get wreck field
+// @Description Get wreck field at specific coordinates
+// @Tags Wrecks
+// @Produce json
+// @Param galaxy path int true "Galaxy"
+// @Param system path int true "System"
+// @Param position path int true "Position"
+// @Security BearerAuth
+// @Success 200
+// @Router /wrecks/{galaxy}/{system}/{position} [get]
 func (h *Handlers) GetWreckField(c *fiber.Ctx) error {
 	galaxy, err := strconv.Atoi(c.Params("galaxy"))
 	if err != nil {
@@ -2626,6 +3292,18 @@ func (h *Handlers) GetWreckField(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": wreck})
 }
 
+// CollectWreckField sends a fleet to collect wreck field
+// @Summary Collect wreck field
+// @Description Send a fleet to collect wreck field at specific coordinates
+// @Tags Wrecks
+// @Accept json
+// @Produce json
+// @Param galaxy path int true "Galaxy"
+// @Param system path int true "System"
+// @Param position path int true "Position"
+// @Security BearerAuth
+// @Success 200
+// @Router /wrecks/{galaxy}/{system}/{position}/collect [post]
 func (h *Handlers) CollectWreckField(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2666,6 +3344,14 @@ func (h *Handlers) CollectWreckField(c *fiber.Ctx) error {
 	})
 }
 
+// GetNPCPlanets returns all NPC planets
+// @Summary Get NPC planets
+// @Description Get all NPC planets in the universe
+// @Tags NPC
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /npc/planets [get]
 func (h *Handlers) GetNPCPlanets(c *fiber.Ctx) error {
 	planets, err := h.npcService.GetNPCPlanets(c.Context())
 	if err != nil {
@@ -2674,6 +3360,17 @@ func (h *Handlers) GetNPCPlanets(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": planets})
 }
 
+// GetNPCPlanet returns a specific NPC planet
+// @Summary Get NPC planet
+// @Description Get a specific NPC planet
+// @Tags NPC
+// @Produce json
+// @Param galaxy path int true "Galaxy"
+// @Param system path int true "System"
+// @Param position path int true "Position"
+// @Security BearerAuth
+// @Success 200
+// @Router /npc/planets/{galaxy}/{system}/{position} [get]
 func (h *Handlers) GetNPCPlanet(c *fiber.Ctx) error {
 	galaxy, err := strconv.Atoi(c.Params("galaxy"))
 	if err != nil {
@@ -2695,6 +3392,15 @@ func (h *Handlers) GetNPCPlanet(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": planet})
 }
 
+// CreateNPCPlanet creates a new NPC planet (admin only)
+// @Summary Create NPC planet
+// @Description Create a new NPC planet
+// @Tags NPC
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /npc/planets [post]
 func (h *Handlers) CreateNPCPlanet(c *fiber.Ctx) error {
 	galaxy, err := strconv.Atoi(c.FormValue("galaxy"))
 	if err != nil {
@@ -2747,6 +3453,14 @@ func (h *Handlers) CreateNPCPlanet(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": planet})
 }
 
+// GenerateExpeditionFleet generates a random expedition fleet
+// @Summary Generate expedition fleet
+// @Description Generate a random expedition fleet for testing
+// @Tags NPC
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /npc/fleets/expedition [post]
 func (h *Handlers) GenerateExpeditionFleet(c *fiber.Ctx) error {
 	galaxy, err := strconv.Atoi(c.FormValue("galaxy"))
 	if err != nil {
@@ -2769,6 +3483,14 @@ func (h *Handlers) GenerateExpeditionFleet(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": fleet})
 }
 
+// GeneratePirateRaid generates a pirate raid fleet
+// @Summary Generate pirate raid
+// @Description Generate a pirate raid fleet for testing
+// @Tags NPC
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /npc/fleets/pirate [post]
 func (h *Handlers) GeneratePirateRaid(c *fiber.Ctx) error {
 	galaxy, err := strconv.Atoi(c.FormValue("target_galaxy"))
 	if err != nil {
@@ -2791,6 +3513,15 @@ func (h *Handlers) GeneratePirateRaid(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": fleet})
 }
 
+// CreateACS creates an Attack Coordinate System (ACS) alliance
+// @Summary Create ACS
+// @Description Create an Attack Coordinate System (ACS) alliance for coordinated attacks
+// @Tags ACS
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /acs/create [post]
 func (h *Handlers) CreateACS(c *fiber.Ctx) error {
 	fleetID, err := strconv.ParseUint(c.FormValue("fleet_id"), 10, 32)
 	if err != nil {
@@ -2822,6 +3553,16 @@ func (h *Handlers) CreateACS(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": acs})
 }
 
+// JoinACS joins an existing ACS
+// @Summary Join ACS
+// @Description Join an existing Attack Coordinate System (ACS)
+// @Tags ACS
+// @Accept json
+// @Produce json
+// @Param id path int true "ACS ID"
+// @Security BearerAuth
+// @Success 200
+// @Router /acs/{id}/join [post]
 func (h *Handlers) JoinACS(c *fiber.Ctx) error {
 	acsID, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
@@ -2841,6 +3582,15 @@ func (h *Handlers) JoinACS(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": acs})
 }
 
+// GetACS returns information about an ACS
+// @Summary Get ACS
+// @Description Get information about an Attack Coordinate System (ACS)
+// @Tags ACS
+// @Produce json
+// @Param id path int true "ACS ID"
+// @Security BearerAuth
+// @Success 200
+// @Router /acs/{id} [get]
 func (h *Handlers) GetACS(c *fiber.Ctx) error {
 	acsID, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
@@ -2855,6 +3605,15 @@ func (h *Handlers) GetACS(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": acs})
 }
 
+// GetACSFleets returns fleets in an ACS
+// @Summary Get ACS fleets
+// @Description Get all fleets in an Attack Coordinate System (ACS)
+// @Tags ACS
+// @Produce json
+// @Param id path int true "ACS ID"
+// @Security BearerAuth
+// @Success 200
+// @Router /acs/{id}/fleets [get]
 func (h *Handlers) GetACSFleets(c *fiber.Ctx) error {
 	acsID, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
@@ -2869,6 +3628,14 @@ func (h *Handlers) GetACSFleets(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": fleets})
 }
 
+// GetPremiumStatus returns premium status for the current user
+// @Summary Get premium status
+// @Description Get premium status for the current user
+// @Tags Premium
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /premium [get]
 func (h *Handlers) GetPremiumStatus(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2886,6 +3653,15 @@ func (h *Handlers) GetPremiumStatus(c *fiber.Ctx) error {
 	})
 }
 
+// ActivatePremium activates premium features
+// @Summary Activate premium
+// @Description Activate premium features using dark matter
+// @Tags Premium
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /premium/activate [post]
 func (h *Handlers) ActivatePremium(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2905,6 +3681,15 @@ func (h *Handlers) ActivatePremium(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "message": "premium activated"})
 }
 
+// MerchantBuy buys resources from the merchant
+// @Summary Merchant buy
+// @Description Buy resources from the merchant using dark matter
+// @Tags Merchant
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /merchant/buy [post]
 func (h *Handlers) MerchantBuy(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2930,6 +3715,15 @@ func (h *Handlers) MerchantBuy(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "message": "resource purchased"})
 }
 
+// MerchantSell sells resources to the merchant
+// @Summary Merchant sell
+// @Description Sell resources to the merchant for dark matter
+// @Tags Merchant
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Router /merchant/sell [post]
 func (h *Handlers) MerchantSell(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2955,6 +3749,16 @@ func (h *Handlers) MerchantSell(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "message": "resource sold"})
 }
 
+// MovePlanet moves a planet to new coordinates
+// @Summary Move planet
+// @Description Move a planet to new coordinates (requires Dark Matter)
+// @Tags Planets
+// @Accept json
+// @Produce json
+// @Param id path int true "Planet ID"
+// @Security BearerAuth
+// @Success 200
+// @Router /planets/{id}/move [post]
 func (h *Handlers) MovePlanet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -2996,6 +3800,15 @@ func (h *Handlers) MovePlanet(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": planet})
 }
 
+// GetCharacterClass returns the current user's character class
+// @Summary Get character class
+// @Description Get available character classes and current selection
+// @Tags Character
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /character-class [get]
 func (h *Handlers) GetCharacterClass(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -3023,6 +3836,16 @@ func (h *Handlers) GetCharacterClass(c *fiber.Ctx) error {
 	})
 }
 
+// SelectCharacterClass allows the user to select a character class
+// @Summary Select character class
+// @Description Select a character class (Collector, General, Engineer)
+// @Tags Character
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200
+// @Failure 401
+// @Router /character-class/select [post]
 func (h *Handlers) SelectCharacterClass(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 	if userID == 0 {
@@ -3041,3 +3864,387 @@ func (h *Handlers) SelectCharacterClass(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"success": true, "character_class": classID})
 }
+
+// ============ REFERENCE DATA ENDPOINTS ============
+
+// GetBuildings returns all buildings with their costs and info
+// @Summary Get all buildings
+// @Description Get list of all buildings with IDs, names, base costs, and cost factors
+// @Tags Reference
+// @Produce json
+// @Success 200
+// @Router /buildings [get]
+func (h *Handlers) GetBuildings(c *fiber.Ctx) error {
+	type Building struct {
+		ID          int     `json:"id"`
+		Name        string  `json:"name"`
+		Metal       int     `json:"metal"`
+		Crystal     int     `json:"crystal"`
+		Deuterium   int     `json:"deuterium"`
+		CostFactor  float64 `json:"cost_factor"`
+		Category    string  `json:"category"`
+	}
+	buildings := []Building{
+		{1, "Metal Mine", 60, 0, 0, 1.5, "mine"},
+		{2, "Crystal Mine", 48, 24, 0, 1.6, "mine"},
+		{3, "Deuterium Synthesizer", 225, 0, 0, 1.5, "mine"},
+		{4, "Solar Plant", 75, 0, 0, 1.5, "energy"},
+		{5, "Fusion Reactor", 900, 360, 180, 1.8, "energy"},
+		{6, "Metal Storage", 100, 0, 0, 2.0, "storage"},
+		{7, "Crystal Storage", 100, 50, 0, 2.0, "storage"},
+		{8, "Deuterium Storage", 100, 100, 0, 2.0, "storage"},
+		{9, "Robot Factory", 400, 120, 0, 2.0, "facility"},
+		{10, "Shipyard", 400, 200, 0, 2.0, "facility"},
+		{11, "Research Lab", 200, 400, 0, 2.0, "facility"},
+		{12, "Nanite Factory", 1000000, 200000, 0, 2.0, "facility"},
+		{13, "Terraformer", 50000, 100000, 1000000, 2.0, "facility"},
+		{14, "Space Dock", 400, 200, 100, 2.0, "facility"},
+		{15, "Metal Silo", 100, 0, 0, 2.0, "storage"},
+		{16, "Crystal Silo", 100, 50, 0, 2.0, "storage"},
+		{17, "Deuterium Silo", 100, 100, 0, 2.0, "storage"},
+		{18, "Lunar Base", 20000, 40000, 20000, 2.0, "moon"},
+		{19, "Sensor Phalanx", 20000, 40000, 20000, 2.0, "moon"},
+		{20, "Jump Gate", 2000000, 4000000, 2000000, 2.0, "moon"},
+		{21, "Missile Silo", 20000, 20000, 1000, 2.0, "facility"},
+	}
+	return c.JSON(fiber.Map{"buildings": buildings})
+}
+
+// GetBuilding returns a single building by ID
+// @Summary Get building by ID
+// @Description Get detailed information about a specific building
+// @Tags Reference
+// @Produce json
+// @Param id path int true "Building ID"
+// @Success 200
+// @Router /buildings/{id} [get]
+func (h *Handlers) GetBuilding(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid building id"})
+	}
+	return c.JSON(fiber.Map{
+		"id": id,
+		"name": "Building",
+		"base_cost": fiber.Map{"metal": 60, "crystal": 0, "deuterium": 0},
+		"cost_factor": 1.5,
+	})
+}
+
+// GetShips returns all ships with full stats
+// @Summary Get all ships
+// @Description Get list of all ships with IDs, names, costs, speed, cargo, armor, weapons, shields
+// @Tags Reference
+// @Produce json
+// @Success 200
+// @Router /ships [get]
+func (h *Handlers) GetShips(c *fiber.Ctx) error {
+	type Ship struct {
+		ID             int    `json:"id"`
+		Name           string `json:"name"`
+		Metal          int64  `json:"metal"`
+		Crystal        int64  `json:"crystal"`
+		Deuterium      int64  `json:"deuterium"`
+		BuildTime      int    `json:"build_time_seconds"`
+		CargoCapacity  int64  `json:"cargo_capacity"`
+		BaseSpeed      int64  `json:"base_speed"`
+		StructuralInt  int64  `json:"structural_integrity"`
+		Shield         int64  `json:"shield"`
+		Weapon         int64  `json:"weapon"`
+		Engine         string `json:"engine_type"`
+	}
+	ships := []Ship{
+		{202, "Small Cargo", 2000, 2000, 0, 5, 5000, 5000, 2000, 10, 5, "combustion"},
+		{203, "Large Cargo", 6000, 6000, 0, 8, 25000, 7500, 6000, 25, 12, "combustion"},
+		{204, "Light Fighter", 10000, 6000, 2000, 20, 50, 12500, 4000, 10, 50, "combustion"},
+		{205, "Heavy Fighter", 25000, 15000, 5000, 40, 100, 10000, 10000, 25, 150, "impulse"},
+		{206, "Cruiser", 10000, 20000, 10000, 10, 800, 15000, 27000, 50, 400, "impulse"},
+		{207, "Battleship", 50000, 25000, 15000, 80, 1500, 10000, 60000, 200, 1000, "hyperspace"},
+		{208, "Colony Ship", 10000, 10000, 0, 50, 7500, 2500, 30000, 100, 150, "impulse"},
+		{209, "Recycler", 10000, 6000, 2000, 15, 20000, 6000, 16000, 10, 100, "hyperspace"},
+		{210, "Espionage Probe", 0, 1000, 0, 30, 5, 100000000, 1000, 1, 0, "combustion"},
+		{211, "Bomber", 50000, 50000, 25000, 200, 500, 4000, 75000, 500, 1000, "impulse"},
+		{212, "Solar Satellite", 0, 2000, 500, 3, 0, 0, 2000, 1, 1, "none"},
+		{213, "Destroyer", 10000, 10000, 0, 30, 2000, 5000, 110000, 500, 2000, "hyperspace"},
+		{214, "Deathstar", 100000, 100000, 50000, 400, 1000000, 100, 9000000, 50000, 200000, "hyperspace"},
+		{215, "Battlecruiser", 3000, 1000, 0, 4, 750, 10000, 70000, 400, 700, "hyperspace"},
+		{217, "Crawler", 2000, 2000, 1000, 10, 0, 4000, 4000, 2, 8, "combustion"},
+		{218, "Reaper", 8000, 0, 0, 20, 700, 10000, 140000, 700, 2800, "hyperspace"},
+		{219, "Pathfinder", 20000, 10000, 10000, 75, 500, 12000, 23000, 100, 200, "hyperspace"},
+	}
+	return c.JSON(fiber.Map{"ships": ships})
+}
+
+// GetShip returns a single ship by ID
+// @Summary Get ship by ID
+// @Description Get detailed information about a specific ship
+// @Tags Reference
+// @Produce json
+// @Param id path int true "Ship ID"
+// @Success 200
+// @Router /ships/{id} [get]
+func (h *Handlers) GetShip(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid ship id"})
+	}
+	type Ship struct {
+		ID             int    `json:"id"`
+		Name           string `json:"name"`
+		Metal          int64  `json:"metal"`
+		Crystal        int64  `json:"crystal"`
+		Deuterium      int64  `json:"deuterium"`
+		BuildTime      int    `json:"build_time_seconds"`
+		CargoCapacity  int64  `json:"cargo_capacity"`
+		BaseSpeed      int64  `json:"base_speed"`
+		StructuralInt  int64  `json:"structural_integrity"`
+		Shield         int64  `json:"shield"`
+		Weapon         int64  `json:"weapon"`
+		Engine         string `json:"engine_type"`
+	}
+	ships := map[int]Ship{
+		202: {202, "Small Cargo", 2000, 2000, 0, 5, 5000, 5000, 2000, 10, 5, "combustion"},
+		203: {203, "Large Cargo", 6000, 6000, 0, 8, 25000, 7500, 6000, 25, 12, "combustion"},
+		204: {204, "Light Fighter", 10000, 6000, 2000, 20, 50, 12500, 4000, 10, 50, "combustion"},
+		205: {205, "Heavy Fighter", 25000, 15000, 5000, 40, 100, 10000, 10000, 25, 150, "impulse"},
+		206: {206, "Cruiser", 10000, 20000, 10000, 10, 800, 15000, 27000, 50, 400, "impulse"},
+		207: {207, "Battleship", 50000, 25000, 15000, 80, 1500, 10000, 60000, 200, 1000, "hyperspace"},
+		208: {208, "Colony Ship", 10000, 10000, 0, 50, 7500, 2500, 30000, 100, 150, "impulse"},
+		209: {209, "Recycler", 10000, 6000, 2000, 15, 20000, 6000, 16000, 10, 100, "hyperspace"},
+		210: {210, "Espionage Probe", 0, 1000, 0, 30, 5, 100000000, 1000, 1, 0, "combustion"},
+		211: {211, "Bomber", 50000, 50000, 25000, 200, 500, 4000, 75000, 500, 1000, "impulse"},
+		212: {212, "Solar Satellite", 0, 2000, 500, 3, 0, 0, 2000, 1, 1, "none"},
+		213: {213, "Destroyer", 10000, 10000, 0, 30, 2000, 5000, 110000, 500, 2000, "hyperspace"},
+		214: {214, "Deathstar", 100000, 100000, 50000, 400, 1000000, 100, 9000000, 50000, 200000, "hyperspace"},
+		215: {215, "Battlecruiser", 3000, 1000, 0, 4, 750, 10000, 70000, 400, 700, "hyperspace"},
+		217: {217, "Crawler", 2000, 2000, 1000, 10, 0, 4000, 4000, 2, 8, "combustion"},
+		218: {218, "Reaper", 8000, 0, 0, 20, 700, 140000, 10000, 700, 2800, "hyperspace"},
+		219: {219, "Pathfinder", 20000, 10000, 10000, 75, 500, 12000, 23000, 100, 200, "hyperspace"},
+	}
+	ship, ok := ships[id]
+	if !ok {
+		return c.Status(404).JSON(fiber.Map{"error": "ship not found"})
+	}
+	return c.JSON(ship)
+}
+
+// GetDefense returns all defense units with full stats
+// @Summary Get all defense
+// @Description Get list of all defense units with IDs, names, costs, armor, weapons, shields
+// @Tags Reference
+// @Produce json
+// @Success 200
+// @Router /defense [get]
+func (h *Handlers) GetDefense(c *fiber.Ctx) error {
+	type Defense struct {
+		ID                int    `json:"id"`
+		Name              string `json:"name"`
+		Metal             int64  `json:"metal"`
+		Crystal           int64  `json:"crystal"`
+		Deuterium         int64  `json:"deuterium"`
+		BuildTime         int    `json:"build_time_seconds"`
+		StructuralInt     int64  `json:"structural_integrity"`
+		Shield            int64  `json:"shield"`
+		Weapon            int64  `json:"weapon"`
+	}
+	defense := []Defense{
+		{401, "Rocket Launcher", 2000, 0, 0, 10, 2000, 20, 80},
+		{402, "Light Laser", 1500, 500, 0, 11, 2000, 25, 100},
+		{403, "Heavy Laser", 6000, 2000, 0, 22, 8000, 100, 250},
+		{404, "Ion Cannon", 2000, 6000, 0, 16, 8000, 500, 150},
+		{405, "Gauss Cannon", 20000, 15000, 2000, 45, 35000, 200, 1100},
+		{406, "Plasma Turret", 50000, 50000, 30000, 90, 100000, 300, 3000},
+		{407, "Small Shield Dome", 10000, 10000, 0, 20, 20000, 2000, 1},
+		{408, "Large Shield Dome", 50000, 50000, 0, 60, 100000, 10000, 1},
+		{409, "Anti-Ballistic Missile", 8000, 0, 0, 1, 8000, 1, 1},
+		{410, "Interplanetary Missile", 15000, 0, 0, 1, 15000, 1, 12000},
+	}
+	return c.JSON(fiber.Map{"defense": defense})
+}
+
+// GetDefenseUnit returns a single defense by ID
+// @Summary Get defense by ID
+// @Description Get detailed information about a specific defense unit
+// @Tags Reference
+// @Produce json
+// @Param id path int true "Defense ID"
+// @Success 200
+// @Router /defense/{id} [get]
+func (h *Handlers) GetDefenseUnit(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid defense id"})
+	}
+	type Defense struct {
+		ID                int    `json:"id"`
+		Name              string `json:"name"`
+		Metal             int64  `json:"metal"`
+		Crystal           int64  `json:"crystal"`
+		Deuterium         int64  `json:"deuterium"`
+		BuildTime         int    `json:"build_time_seconds"`
+		StructuralInt     int64  `json:"structural_integrity"`
+		Shield            int64  `json:"shield"`
+		Weapon            int64  `json:"weapon"`
+	}
+	defense := map[int]Defense{
+		401: {401, "Rocket Launcher", 2000, 0, 0, 10, 2000, 20, 80},
+		402: {402, "Light Laser", 1500, 500, 0, 11, 2000, 25, 100},
+		403: {403, "Heavy Laser", 6000, 2000, 0, 22, 8000, 100, 250},
+		404: {404, "Ion Cannon", 2000, 6000, 0, 16, 8000, 500, 150},
+		405: {405, "Gauss Cannon", 20000, 15000, 2000, 45, 35000, 200, 1100},
+		406: {406, "Plasma Turret", 50000, 50000, 30000, 90, 100000, 300, 3000},
+		407: {407, "Small Shield Dome", 10000, 10000, 0, 20, 20000, 2000, 1},
+		408: {408, "Large Shield Dome", 50000, 50000, 0, 60, 100000, 10000, 1},
+		409: {409, "Anti-Ballistic Missile", 8000, 0, 0, 1, 8000, 1, 1},
+		410: {410, "Interplanetary Missile", 15000, 0, 0, 1, 15000, 1, 12000},
+	}
+	def, ok := defense[id]
+	if !ok {
+		return c.Status(404).JSON(fiber.Map{"error": "defense not found"})
+	}
+	return c.JSON(def)
+}
+
+// GetResearch returns all research types with costs
+// @Summary Get all research
+// @Description Get list of all research types with IDs, names, and base costs
+// @Tags Reference
+// @Produce json
+// @Success 200
+// @Router /research [get]
+func (h *Handlers) GetResearch(c *fiber.Ctx) error {
+	type Research struct {
+		ID          int    `json:"id"`
+		Name        string `json:"name"`
+		Metal       int64  `json:"metal"`
+		Crystal     int64  `json:"crystal"`
+		Deuterium   int64  `json:"deuterium"`
+	}
+	research := []Research{
+		{113, "Energy Technology", 0, 800, 400},
+		{120, "Laser Technology", 200, 600, 0},
+		{121, "Ion Technology", 1000, 300, 0},
+		{114, "Hyperspace Technology", 4000, 2000, 1000},
+		{122, "Plasma Technology", 2400, 1200, 600},
+		{115, "Combustion Drive", 4000, 2000, 600},
+		{117, "Impulse Drive", 4000, 2000, 600},
+		{118, "Hyperspace Drive", 10000, 6000, 4000},
+		{106, "Espionage Technology", 200, 1000, 200},
+		{108, "Computer Technology", 100, 400, 200},
+		{124, "Astrophysics", 8000, 4000, 2000},
+		{123, "Graviton Technology", 100000, 50000, 50000},
+		{109, "Weapons Technology", 800, 200, 0},
+		{110, "Shielding Technology", 400, 600, 0},
+		{111, "Armour Technology", 400, 200, 0},
+	}
+	return c.JSON(fiber.Map{"research": research})
+}
+
+// GetResearchType returns a single research by ID
+// @Summary Get research by ID
+// @Description Get detailed information about a specific research
+// @Tags Reference
+// @Produce json
+// @Param id path int true "Research ID"
+// @Success 200
+// @Router /research/{id} [get]
+func (h *Handlers) GetResearchType(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid research id"})
+	}
+	type Research struct {
+		ID          int    `json:"id"`
+		Name        string `json:"name"`
+		Metal       int64  `json:"metal"`
+		Crystal     int64  `json:"crystal"`
+		Deuterium   int64  `json:"deuterium"`
+	}
+	research := map[int]Research{
+		113: {113, "Energy Technology", 0, 800, 400},
+		120: {120, "Laser Technology", 200, 600, 0},
+		121: {121, "Ion Technology", 1000, 300, 0},
+		114: {114, "Hyperspace Technology", 4000, 2000, 1000},
+		122: {122, "Plasma Technology", 2400, 1200, 600},
+		115: {115, "Combustion Drive", 4000, 2000, 600},
+		117: {117, "Impulse Drive", 4000, 2000, 600},
+		118: {118, "Hyperspace Drive", 10000, 6000, 4000},
+		106: {106, "Espionage Technology", 200, 1000, 200},
+		108: {108, "Computer Technology", 100, 400, 200},
+		124: {124, "Astrophysics", 8000, 4000, 2000},
+		123: {123, "Graviton Technology", 100000, 50000, 50000},
+		109: {109, "Weapons Technology", 800, 200, 0},
+		110: {110, "Shielding Technology", 400, 600, 0},
+		111: {111, "Armour Technology", 400, 200, 0},
+	}
+	res, ok := research[id]
+	if !ok {
+		return c.Status(404).JSON(fiber.Map{"error": "research not found"})
+	}
+	return c.JSON(res)
+}
+
+// GetMissions returns all mission types
+// @Summary Get all missions
+// @Description Get list of all fleet mission types
+// @Tags Reference
+// @Produce json
+// @Success 200
+// @Router /missions [get]
+func (h *Handlers) GetMissions(c *fiber.Ctx) error {
+	type Mission struct {
+		ID          int    `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	missions := []Mission{
+		{1, "Attack", "Attack enemy fleets and planets"},
+		{2, "Transport", "Transport resources between planets"},
+		{3, "Colonize", "Colonize a new planet"},
+		{4, "Recycle", "Harvest debris fields"},
+		{5, "Expedition", "Explore for resources and artifacts"},
+		{6, "ACS", "Attack Coordinate System - combine with allies"},
+		{7, "Hold", "Hold position at target"},
+		{8, "Deploy", "Deploy resources to another planet"},
+	}
+	return c.JSON(fiber.Map{"missions": missions})
+}
+
+// GetGame returns game meta information
+// @Summary Get game info
+// @Description Get highscore categories and other game meta information
+// @Tags Reference
+// @Produce json
+// @Success 200
+// @Router /game [get]
+func (h *Handlers) GetGame(c *fiber.Ctx) error {
+	type HighscoreCategory struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}
+	type CharacterClass struct {
+		ID          int    `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	return c.JSON(fiber.Map{
+		"highscore_categories": []HighscoreCategory{
+			{0, "Total Points"},
+			{1, "Economy"},
+			{2, "Research"},
+			{3, "Military"},
+			{4, "Military Built"},
+			{5, "Military Destroyed"},
+			{6, "Military Lost"},
+			{7, "Honor"},
+		},
+		"character_classes": []CharacterClass{
+			{0, "None", "No special class"},
+			{1, "Collector", "Production bonuses"},
+			{2, "General", "Military bonuses"},
+			{3, "Discoverer", "Expedition bonuses"},
+		},
+	})
+}
+
+// End of reference data handlers

@@ -15,24 +15,24 @@ import (
 )
 
 type Handlers struct {
-	buildingService   *service.BuildingService
-	researchService   *service.ResearchService
-	fleetService      *service.FleetService
-	planetRepo        repository.PlanetRepository
-	authService       *service.AuthService
-	unitService       *service.UnitService
-	productionService *service.ProductionService
-	messageService    *service.MessageService
-	planetService     *service.PlanetService
-	noteService       *service.NoteService
-	allianceService   *service.AllianceService
-	buddyService     *service.BuddyService
-	moonService      *service.MoonService
-	espionageService *service.EspionageService
-	debrisService    *service.DebrisService
-	npcService       *service.NPCService
-	acsService       *service.ACSService
-	premiumService   *service.PremiumService
+	buildingService       *service.BuildingService
+	researchService       *service.ResearchService
+	fleetService          *service.FleetService
+	planetRepo            repository.PlanetRepository
+	authService           *service.AuthService
+	unitService           *service.UnitService
+	productionService     *service.ProductionService
+	messageService        *service.MessageService
+	planetService         *service.PlanetService
+	noteService           *service.NoteService
+	allianceService       *service.AllianceService
+	buddyService          *service.BuddyService
+	moonService           *service.MoonService
+	espionageService      *service.EspionageService
+	debrisService         *service.DebrisService
+	npcService            *service.NPCService
+	acsService            *service.ACSService
+	premiumService        *service.PremiumService
 	characterClassService *service.CharacterClassService
 }
 
@@ -58,24 +58,24 @@ func NewHandlers(
 	characterClassService *service.CharacterClassService,
 ) *Handlers {
 	return &Handlers{
-		buildingService:   buildingService,
-		researchService:   researchService,
-		fleetService:      fleetService,
-		planetRepo:        planetRepo,
-		authService:       authService,
-		unitService:       unitService,
-		productionService: productionService,
-		messageService:    messageService,
-		planetService:     planetService,
-		noteService:       noteService,
-		allianceService:   allianceService,
-		buddyService:     buddyService,
-		moonService:      moonService,
-		espionageService: espionageService,
-		debrisService:    debrisService,
-		npcService:       npcService,
-		acsService:       acsService,
-		premiumService:   premiumService,
+		buildingService:       buildingService,
+		researchService:       researchService,
+		fleetService:          fleetService,
+		planetRepo:            planetRepo,
+		authService:           authService,
+		unitService:           unitService,
+		productionService:     productionService,
+		messageService:        messageService,
+		planetService:         planetService,
+		noteService:           noteService,
+		allianceService:       allianceService,
+		buddyService:          buddyService,
+		moonService:           moonService,
+		espionageService:      espionageService,
+		debrisService:         debrisService,
+		npcService:            npcService,
+		acsService:            acsService,
+		premiumService:        premiumService,
 		characterClassService: characterClassService,
 	}
 }
@@ -85,11 +85,11 @@ func (h *Handlers) SetupRoutes(app *fiber.App) {
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "test works"})
 	})
-	
+
 	api := app.Group("/api/v1")
 
 	api.Get("/status", h.GetStatus)
-	
+
 	api.Post("/auth/register", h.Register)
 	api.Post("/auth/login", h.Login)
 
@@ -304,8 +304,8 @@ func (h *Handlers) FixPlanets(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":         true,
-		"planets_fixed":  count,
+		"success":       true,
+		"planets_fixed": count,
 	})
 }
 
@@ -324,7 +324,7 @@ func (h *Handlers) FixProductionPercentages(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":        true,
+		"success":       true,
 		"planets_fixed": count,
 	})
 }
@@ -338,11 +338,11 @@ func (h *Handlers) FixProductionPercentages(c *fiber.Ctx) error {
 // @Router /status [get]
 func (h *Handlers) GetStatus(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
-		"online":    true,
-		"version":   "0.0.1",
-		"universe":  "ogamex-go",
-		"api_base":  "/api/v1",
-		"time":      time.Now().Unix(),
+		"online":   true,
+		"version":  "0.0.1",
+		"universe": "ogamex-go",
+		"api_base": "/api/v1",
+		"time":     time.Now().Unix(),
 	})
 }
 
@@ -360,17 +360,17 @@ func (h *Handlers) GetUser(c *fiber.Ctx) error {
 	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
 	}
-	
+
 	u := user.(*schema.User)
-	
+
 	return c.JSON(fiber.Map{
 		"id":              u.ID,
-		"username":       u.Username,
-		"email":          u.Email,
-		"player_name":    u.PlayerName,
-		"dark_matter":    u.DarkMatter,
+		"username":        u.Username,
+		"email":           u.Email,
+		"player_name":     u.PlayerName,
+		"dark_matter":     u.DarkMatter,
 		"character_class": u.CharacterClass,
-		"current_planet": u.CurrentPlanetID,
+		"current_planet":  u.CurrentPlanetID,
 	})
 }
 
@@ -406,12 +406,12 @@ func (h *Handlers) GetUserStats(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"user_id":           userID,
-		"planets":           planetCount,
+		"user_id": userID,
+		"planets": planetCount,
 		"total_resources": fiber.Map{
-			"metal":      totalMetal,
-			"crystal":    totalCrystal,
-			"deuterium":  totalDeuterium,
+			"metal":     totalMetal,
+			"crystal":   totalCrystal,
+			"deuterium": totalDeuterium,
 		},
 	})
 }
@@ -430,12 +430,12 @@ func (h *Handlers) GetUserPlanets(c *fiber.Ctx) error {
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "unauthorized"})
 	}
-	
+
 	planets, err := h.planetRepo.GetByUserID(c.Context(), userID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	
+
 	type PlanetInfo struct {
 		ID       uint   `json:"id"`
 		Name     string `json:"name"`
@@ -444,7 +444,7 @@ func (h *Handlers) GetUserPlanets(c *fiber.Ctx) error {
 		Position int    `json:"position"`
 		IsMoon   bool   `json:"is_moon"`
 	}
-	
+
 	items := make([]PlanetInfo, len(planets))
 	for i, p := range planets {
 		items[i] = PlanetInfo{
@@ -456,7 +456,7 @@ func (h *Handlers) GetUserPlanets(c *fiber.Ctx) error {
 			IsMoon:   p.IsMoon,
 		}
 	}
-	
+
 	return c.JSON(fiber.Map{
 		"planets": items,
 	})
@@ -517,27 +517,27 @@ func (h *Handlers) GetPlanetDetails(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"id":              planet.ID,
-		"name":            planet.Name,
-		"galaxy":          planet.Galaxy,
-		"system":          planet.System,
-		"position":        planet.Position,
-		"is_moon":         planet.IsMoon,
-		"planet_type":     planet.PlanetType,
-		"metal":           planet.Metal,
-		"crystal":         planet.Crystal,
-		"deuterium":       planet.Deuterium,
-		"metal_capacity":  planet.MetalCapacity,
-		"crystal_capacity": planet.CrystalCapacity,
+		"id":                 planet.ID,
+		"name":               planet.Name,
+		"galaxy":             planet.Galaxy,
+		"system":             planet.System,
+		"position":           planet.Position,
+		"is_moon":            planet.IsMoon,
+		"planet_type":        planet.PlanetType,
+		"metal":              planet.Metal,
+		"crystal":            planet.Crystal,
+		"deuterium":          planet.Deuterium,
+		"metal_capacity":     planet.MetalCapacity,
+		"crystal_capacity":   planet.CrystalCapacity,
 		"deuterium_capacity": planet.DeuteriumCapacity,
-		"energy_available": planet.EnergyAvailable,
-		"energy_max":      planet.EnergyMax,
-		"energy_used":     planet.EnergyUsed,
-		"fields_used":     planet.FieldsUsed,
-		"fields_max":      planet.FieldsMax,
-		"temp_min":        planet.TempMin,
-		"temp_max":        planet.TempMax,
-		"defense_activated": planet.DefenseActivated,
+		"energy_available":   planet.EnergyAvailable,
+		"energy_max":         planet.EnergyMax,
+		"energy_used":        planet.EnergyUsed,
+		"fields_used":        planet.FieldsUsed,
+		"fields_max":         planet.FieldsMax,
+		"temp_min":           planet.TempMin,
+		"temp_max":           planet.TempMax,
+		"defense_activated":  planet.DefenseActivated,
 	})
 }
 
@@ -576,8 +576,8 @@ func (h *Handlers) SetCurrentPlanet(c *fiber.Ctx) error {
 			planetIDs[i] = p.ID
 		}
 		return c.Status(403).JSON(fiber.Map{
-			"error":          "planet does not belong to user",
-			"your_planets":   planetIDs,
+			"error":        "planet does not belong to user",
+			"your_planets": planetIDs,
 		})
 	}
 
@@ -612,7 +612,7 @@ func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 	}
 
 	queue, _ := h.buildingService.GetQueue(c.Context(), uint(planetID))
-	
+
 	hasQueue := len(queue) > 0
 
 	user := c.Locals("user").(*schema.User)
@@ -621,34 +621,34 @@ func (h *Handlers) GetPlanetOverview(c *fiber.Ctx) error {
 	production := h.productionService.CalculateProduction(planet, tech)
 
 	return c.JSON(fiber.Map{
-		"planet_id":     planet.ID,
-		"name":          planet.Name,
+		"planet_id": planet.ID,
+		"name":      planet.Name,
 		"resources": fiber.Map{
-			"metal":      planet.Metal,
-			"crystal":    planet.Crystal,
-			"deuterium":  planet.Deuterium,
-			"energy":     planet.EnergyAvailable,
+			"metal":     planet.Metal,
+			"crystal":   planet.Crystal,
+			"deuterium": planet.Deuterium,
+			"energy":    planet.EnergyAvailable,
 		},
 		"production": fiber.Map{
-			"metal":      production.Metal,
-			"crystal":    production.Crystal,
-			"deuterium":  production.Deuterium,
+			"metal":     production.Metal,
+			"crystal":   production.Crystal,
+			"deuterium": production.Deuterium,
 		},
 		"buildings": fiber.Map{
-			"metal_mine":     planet.MetalMine,
-			"crystal_mine":  planet.CrystalMine,
+			"metal_mine":      planet.MetalMine,
+			"crystal_mine":    planet.CrystalMine,
 			"deuterium_synth": planet.DeuteriumSynthesizer,
-			"solar_plant":    planet.SolarPlant,
-			"fusion_plant":   planet.FusionPlant,
+			"solar_plant":     planet.SolarPlant,
+			"fusion_plant":    planet.FusionPlant,
 		},
 		"production_percent": fiber.Map{
-			"metal_mine":     planet.MetalMinePercent,
-			"crystal_mine":  planet.CrystalMinePercent,
+			"metal_mine":      planet.MetalMinePercent,
+			"crystal_mine":    planet.CrystalMinePercent,
 			"deuterium_synth": planet.DeuteriumSynthesizerPercent,
 		},
-		"has_queue":     hasQueue,
-		"fields_used":   planet.FieldsUsed,
-		"fields_max":    planet.FieldsMax,
+		"has_queue":   hasQueue,
+		"fields_used": planet.FieldsUsed,
+		"fields_max":  planet.FieldsMax,
 	})
 }
 
@@ -674,14 +674,14 @@ func (h *Handlers) GetPlanetResources(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"planet_id":  planet.ID,
-		"metal":      planet.Metal,
-		"crystal":    planet.Crystal,
-		"deuterium":  planet.Deuterium,
-		"energy":     planet.EnergyAvailable,
-		"metal_capacity":      planet.MetalCapacity,
-		"crystal_capacity":    planet.CrystalCapacity,
-		"deuterium_capacity":  planet.DeuteriumCapacity,
+		"planet_id":          planet.ID,
+		"metal":              planet.Metal,
+		"crystal":            planet.Crystal,
+		"deuterium":          planet.Deuterium,
+		"energy":             planet.EnergyAvailable,
+		"metal_capacity":     planet.MetalCapacity,
+		"crystal_capacity":   planet.CrystalCapacity,
+		"deuterium_capacity": planet.DeuteriumCapacity,
 	})
 }
 
@@ -710,16 +710,16 @@ func (h *Handlers) GetPlanetBuildings(c *fiber.Ctx) error {
 		"planet_id": planet.ID,
 		"buildings": fiber.Map{
 			"metal_mine":            planet.MetalMine,
-			"crystal_mine":         planet.CrystalMine,
+			"crystal_mine":          planet.CrystalMine,
 			"deuterium_synthesizer": planet.DeuteriumSynthesizer,
 			"solar_plant":           planet.SolarPlant,
-			"fusion_plant":         planet.FusionPlant,
-			"metal_storage":        planet.MetalStorageBuilding,
-			"crystal_storage":      planet.CrystalStorageBuilding,
+			"fusion_plant":          planet.FusionPlant,
+			"metal_storage":         planet.MetalStorageBuilding,
+			"crystal_storage":       planet.CrystalStorageBuilding,
 			"deuterium_storage":     planet.DeuteriumStorageBuilding,
-			"robot_factory":        planet.RobotFactory,
+			"robot_factory":         planet.RobotFactory,
 			"shipyard":              planet.Shipyard,
-			"research_lab":         planet.ResearchLab,
+			"research_lab":          planet.ResearchLab,
 			"nanite_factory":        planet.NaniteFactory,
 			"terraformer":           planet.Terraformer,
 			"space_dock":            planet.SpaceDock,
@@ -801,11 +801,11 @@ func (h *Handlers) GetBuildingQueue(c *fiber.Ctx) error {
 	}
 
 	type QueueItem struct {
-		ID        uint   `json:"id"`
-		Building  int    `json:"building_id"`
-		Level     int    `json:"level"`
-		StartTime int64  `json:"start_time"`
-		EndTime   int64  `json:"end_time"`
+		ID        uint  `json:"id"`
+		Building  int   `json:"building_id"`
+		Level     int   `json:"level"`
+		StartTime int64 `json:"start_time"`
+		EndTime   int64 `json:"end_time"`
 	}
 
 	items := make([]QueueItem, len(queue))
@@ -884,9 +884,9 @@ func (h *Handlers) StartResearch(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":      true,
-		"user_id":      userID,
-		"research_id":  req.ResearchID,
+		"success":     true,
+		"user_id":     userID,
+		"research_id": req.ResearchID,
 	})
 }
 
@@ -911,11 +911,11 @@ func (h *Handlers) GetResearchQueue(c *fiber.Ctx) error {
 	}
 
 	type QueueItem struct {
-		ID         uint   `json:"id"`
-		ResearchID int    `json:"research_id"`
-		Level      int    `json:"level"`
-		StartTime  int64  `json:"start_time"`
-		EndTime    int64  `json:"end_time"`
+		ID         uint  `json:"id"`
+		ResearchID int   `json:"research_id"`
+		Level      int   `json:"level"`
+		StartTime  int64 `json:"start_time"`
+		EndTime    int64 `json:"end_time"`
 	}
 
 	items := make([]QueueItem, len(queue))
@@ -936,13 +936,13 @@ func (h *Handlers) GetResearchQueue(c *fiber.Ctx) error {
 }
 
 type FleetRequest struct {
-	MissionType    int    `json:"mission_type"`
-	OriginGalaxy   int    `json:"origin_galaxy"`
-	OriginSystem   int    `json:"origin_system"`
-	OriginPosition int    `json:"origin_position"`
-	TargetGalaxy   int    `json:"target_galaxy"`
-	TargetSystem   int    `json:"target_system"`
-	TargetPosition int    `json:"target_position"`
+	MissionType    int `json:"mission_type"`
+	OriginGalaxy   int `json:"origin_galaxy"`
+	OriginSystem   int `json:"origin_system"`
+	OriginPosition int `json:"origin_position"`
+	TargetGalaxy   int `json:"target_galaxy"`
+	TargetSystem   int `json:"target_system"`
+	TargetPosition int `json:"target_position"`
 	Resources      struct {
 		Metal     int64 `json:"metal"`
 		Crystal   int64 `json:"crystal"`
@@ -1108,16 +1108,16 @@ func (h *Handlers) SimulateBattle(c *fiber.Ctx) error {
 		var attackerTech, defenderTech *schema.UserTech
 		if req.AttackerTech != nil {
 			attackerTech = &schema.UserTech{
-				WeaponsTechnology:    req.AttackerTech.Weapons,
-				ShieldingTechnology:  req.AttackerTech.Shielding,
-				ArmorTechnology:      req.AttackerTech.Armor,
+				WeaponsTechnology:   req.AttackerTech.Weapons,
+				ShieldingTechnology: req.AttackerTech.Shielding,
+				ArmorTechnology:     req.AttackerTech.Armor,
 			}
 		}
 		if req.DefenderTech != nil {
 			defenderTech = &schema.UserTech{
-				WeaponsTechnology:    req.DefenderTech.Weapons,
-				ShieldingTechnology:  req.DefenderTech.Shielding,
-				ArmorTechnology:      req.DefenderTech.Armor,
+				WeaponsTechnology:   req.DefenderTech.Weapons,
+				ShieldingTechnology: req.DefenderTech.Shielding,
+				ArmorTechnology:     req.DefenderTech.Armor,
 			}
 		}
 
@@ -1219,10 +1219,10 @@ func (h *Handlers) SimulateBattle(c *fiber.Ctx) error {
 	}
 
 	response := dto.BattleSimulateResponse{
-		Simulations:   req.SimulationCount,
-		Winner:        winner,
-		WinChance:     winChance,
-		AttackerWins:  attackerWins,
+		Simulations:  req.SimulationCount,
+		Winner:       winner,
+		WinChance:    winChance,
+		AttackerWins: attackerWins,
 		DefenderWins: defenderWins,
 		Draws:        draws,
 
@@ -1309,16 +1309,16 @@ func calculateDebris(attackerLost, defenderLost map[string]int) (metal, crystal 
 
 func isDefense(name string) bool {
 	defenseNames := map[string]bool{
-		"rocket_launcher": true,
-		"light_laser":     true,
-		"heavy_laser":     true,
-		"ion_cannon":      true,
-		"gauss_cannon":    true,
-		"plasma_turret":   true,
-		"small_shield_dome": true,
-		"large_shield_dome": true,
+		"rocket_launcher":     true,
+		"light_laser":         true,
+		"heavy_laser":         true,
+		"ion_cannon":          true,
+		"gauss_cannon":        true,
+		"plasma_turret":       true,
+		"small_shield_dome":   true,
+		"large_shield_dome":   true,
 		"missile_interceptor": true,
-		"missile_launcher":   true,
+		"missile_launcher":    true,
 	}
 	return defenseNames[strings.ToLower(name)]
 }
@@ -1326,7 +1326,7 @@ func isDefense(name string) bool {
 func calculatePlunder(targetResources *dto.TargetResources, defenderLost map[string]int, attackerFleets []dto.FleetComposition) dto.PlunderInfo {
 	result := dto.PlunderInfo{
 		Theoretical: dto.ResourcesResponse{},
-		Actual:       dto.ResourcesResponse{},
+		Actual:      dto.ResourcesResponse{},
 	}
 
 	if targetResources == nil {
@@ -1370,21 +1370,21 @@ func calculatePlunder(targetResources *dto.TargetResources, defenderLost map[str
 
 func getShipCargo(shipID int16) int64 {
 	cargo := map[int16]int64{
-		202: 5000,   // small_cargo
-		203: 25000,  // large_cargo
-		204: 50,    // light_fighter
-		205: 100,   // heavy_fighter
-		206: 800,   // cruiser
-		207: 1500,  // battleship
-		208: 7500,  // colony_ship
-		209: 20000, // recycler
-		210: 0,     // espionage_probe
-		211: 500,   // bomber
-		213: 2000,  // destroyer
+		202: 5000,    // small_cargo
+		203: 25000,   // large_cargo
+		204: 50,      // light_fighter
+		205: 100,     // heavy_fighter
+		206: 800,     // cruiser
+		207: 1500,    // battleship
+		208: 7500,    // colony_ship
+		209: 20000,   // recycler
+		210: 0,       // espionage_probe
+		211: 500,     // bomber
+		213: 2000,    // destroyer
 		214: 1000000, // deathstar
-		215: 750,   // battlecruiser
-		218: 70000, // reaper
-		219: 15000, // pathfinder
+		215: 750,     // battlecruiser
+		218: 70000,   // reaper
+		219: 15000,   // pathfinder
 	}
 	if c, ok := cargo[shipID]; ok {
 		return c
@@ -1452,11 +1452,11 @@ func calculateDistance(g1, s1, p1, g2, s2, p2 int) int {
 	if galaxyDiff == 0 {
 		systemDiff := abs(s1 - s2)
 		if systemDiff == 0 {
-			return abs(p1 - p2) * 5
+			return abs(p1-p2) * 5
 		}
-		return systemDiff * 20 + 2700
+		return systemDiff*20 + 2700
 	}
-	return galaxyDiff * 20000 + 2700
+	return galaxyDiff*20000 + 2700
 }
 
 func abs(n int) int {
@@ -1475,7 +1475,7 @@ func calculateFlightTime(fleets []dto.FleetComposition, origin, target *dto.Coor
 		target.Galaxy, target.System, target.Position)
 
 	// Find slowest ship in fleet
- slowestSpeed := 1000000
+	slowestSpeed := 1000000
 	for _, fleet := range fleets {
 		for name := range fleet.Ships {
 			speed := getShipSpeed(shipNameToID(name), tech)
@@ -1560,24 +1560,24 @@ func formatTime(seconds int) string {
 
 func shipNameToID(name string) int16 {
 	mapping := map[string]int16{
-		"small_cargo":        202,
-		"large_cargo":        203,
-		"light_fighter":      204,
-		"heavy_fighter":      205,
-		"cruiser":            206,
-		"battleship":         207,
-		"colony_ship":        208,
-		"colonizer":          208,
-		"recycler":           209,
-		"espionage_probe":    210,
-		"bomber":             211,
-		"destroyer":          213,
-		"deathstar":          214,
-		"battlecruiser":      215,
-		"reaper":             218,
-		"pathfinder":         219,
-		"solar_satellite":    212,
-		"crawler":            217,
+		"small_cargo":     202,
+		"large_cargo":     203,
+		"light_fighter":   204,
+		"heavy_fighter":   205,
+		"cruiser":         206,
+		"battleship":      207,
+		"colony_ship":     208,
+		"colonizer":       208,
+		"recycler":        209,
+		"espionage_probe": 210,
+		"bomber":          211,
+		"destroyer":       213,
+		"deathstar":       214,
+		"battlecruiser":   215,
+		"reaper":          218,
+		"pathfinder":      219,
+		"solar_satellite": 212,
+		"crawler":         217,
 	}
 	if id, ok := mapping[strings.ToLower(name)]; ok {
 		return id
@@ -1587,18 +1587,18 @@ func shipNameToID(name string) int16 {
 
 func defenseNameToID(name string) int16 {
 	mapping := map[string]int16{
-		"rocket_launcher":        401,
-		"light_laser":            402,
-		"heavy_laser":            403,
-		"ion_cannon":             404,
-		"gauss_cannon":           405,
-		"plasma_turret":          406,
-		"small_shield_dome":      407,
-		"small_shield":           407,
-		"large_shield_dome":      408,
-		"large_shield":           408,
-		"missile_interceptor":   428,
-		"missile_launcher":       429,
+		"rocket_launcher":     401,
+		"light_laser":         402,
+		"heavy_laser":         403,
+		"ion_cannon":          404,
+		"gauss_cannon":        405,
+		"plasma_turret":       406,
+		"small_shield_dome":   407,
+		"small_shield":        407,
+		"large_shield_dome":   408,
+		"large_shield":        408,
+		"missile_interceptor": 428,
+		"missile_launcher":    429,
 	}
 	if id, ok := mapping[strings.ToLower(name)]; ok {
 		return id
@@ -1659,11 +1659,11 @@ func getShipCost(shipID int16) shipCost {
 		209: {Metal: 10000, Crystal: 6000},
 		210: {Metal: 0, Crystal: 1000},
 		211: {Metal: 50000, Crystal: 25000},
-		212: {Metal: 0, Crystal: 2000},      // solar satellite
+		212: {Metal: 0, Crystal: 2000}, // solar satellite
 		213: {Metal: 60000, Crystal: 50000},
 		214: {Metal: 5000000, Crystal: 4000000},
 		215: {Metal: 30000, Crystal: 4000},
-		217: {Metal: 10000, Crystal: 5000},  // crawler
+		217: {Metal: 10000, Crystal: 5000}, // crawler
 		218: {Metal: 70000, Crystal: 40000},
 		219: {Metal: 40000, Crystal: 20000},
 		// Defense
@@ -1675,7 +1675,7 @@ func getShipCost(shipID int16) shipCost {
 		406: {Metal: 50000, Crystal: 50000},
 		407: {Metal: 10000, Crystal: 0},
 		408: {Metal: 50000, Crystal: 50000},
-		428: {Metal: 8000, Crystal: 2000}, // missile_interceptor
+		428: {Metal: 8000, Crystal: 2000},  // missile_interceptor
 		429: {Metal: 12500, Crystal: 2500}, // missile_launcher
 	}
 	if cost, ok := costs[shipID]; ok {
@@ -1780,9 +1780,9 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 	}
 
 	user, err := h.authService.Register(c.Context(), service.RegisterInput{
-		Username:  req.Username,
-		Email:     req.Email,
-		Password:  req.Password,
+		Username:   req.Username,
+		Email:      req.Email,
+		Password:   req.Password,
 		PlayerName: req.PlayerName,
 	})
 	if err != nil {
@@ -1790,10 +1790,10 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":   true,
-		"user_id":   user.ID,
+		"success":    true,
+		"user_id":    user.ID,
 		"auth_token": user.AuthToken,
-		"username":  user.Username,
+		"username":   user.Username,
 	})
 }
 
@@ -1827,10 +1827,10 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":   true,
-		"user_id":   user.ID,
+		"success":    true,
+		"user_id":    user.ID,
 		"auth_token": user.AuthToken,
-		"username":  user.Username,
+		"username":   user.Username,
 	})
 }
 
@@ -1874,8 +1874,8 @@ func (h *Handlers) BuildUnit(c *fiber.Ctx) error {
 			planetIDs[i] = p.ID
 		}
 		return c.Status(403).JSON(fiber.Map{
-			"error":          "planet does not belong to user",
-			"your_planets":   planetIDs,
+			"error":        "planet does not belong to user",
+			"your_planets": planetIDs,
 		})
 	}
 
@@ -1898,10 +1898,10 @@ func (h *Handlers) BuildUnit(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":  true,
+		"success":   true,
 		"planet_id": planetID,
-		"unit_id":  req.UnitID,
-		"amount":   req.Amount,
+		"unit_id":   req.UnitID,
+		"amount":    req.Amount,
 	})
 }
 
@@ -1927,11 +1927,11 @@ func (h *Handlers) GetUnitQueue(c *fiber.Ctx) error {
 	}
 
 	type UnitQueueItem struct {
-		ID        uint   `json:"id"`
-		UnitID    int    `json:"unit_id"`
-		Amount    int    `json:"amount"`
-		StartTime int64  `json:"start_time"`
-		EndTime   int64  `json:"end_time"`
+		ID        uint  `json:"id"`
+		UnitID    int   `json:"unit_id"`
+		Amount    int   `json:"amount"`
+		StartTime int64 `json:"start_time"`
+		EndTime   int64 `json:"end_time"`
 	}
 
 	items := make([]UnitQueueItem, len(queue))
@@ -1989,13 +1989,13 @@ func (h *Handlers) CancelUnit(c *fiber.Ctx) error {
 // @Router /units/available [get]
 func (h *Handlers) GetAvailableUnits(c *fiber.Ctx) error {
 	type UnitInfo struct {
-		ID          int    `json:"id"`
-		Name        string `json:"name"`
-		Metal       int64  `json:"metal"`
-		Crystal     int64  `json:"crystal"`
-		Deuterium   int64  `json:"deuterium"`
-		BuildTime   int64  `json:"build_time_seconds"`
-		Category    string `json:"category"`
+		ID        int    `json:"id"`
+		Name      string `json:"name"`
+		Metal     int64  `json:"metal"`
+		Crystal   int64  `json:"crystal"`
+		Deuterium int64  `json:"deuterium"`
+		BuildTime int64  `json:"build_time_seconds"`
+		Category  string `json:"category"`
 	}
 
 	units := []UnitInfo{
@@ -2056,23 +2056,23 @@ func (h *Handlers) GetPlanetShips(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"planet_id": planet.ID,
 		"ships": fiber.Map{
-			"small_cargo":       planet.SmallCargo,
-			"large_cargo":       planet.LargeCargo,
-			"light_fighter":    planet.LightFighter,
-			"heavy_fighter":    planet.HeavyFighter,
-			"cruiser":          planet.Cruiser,
-			"battleship":       planet.Battleship,
-			"colony_ship":      planet.ColonyShip,
-			"recycler":         planet.Recycler,
-			"espionage_probe":  planet.EspionageProbe,
-			"bomber":           planet.Bomber,
-			"destroyer":        planet.Destroyer,
-			"deathstar":        planet.Deathstar,
-			"battlecruiser":    planet.Battlecruiser,
-			"reaper":           planet.Reaper,
-			"pathfinder":       planet.Pathfinder,
-			"solar_satellite":  planet.SolarSatellite,
-			"crawler":          planet.Crawler,
+			"small_cargo":     planet.SmallCargo,
+			"large_cargo":     planet.LargeCargo,
+			"light_fighter":   planet.LightFighter,
+			"heavy_fighter":   planet.HeavyFighter,
+			"cruiser":         planet.Cruiser,
+			"battleship":      planet.Battleship,
+			"colony_ship":     planet.ColonyShip,
+			"recycler":        planet.Recycler,
+			"espionage_probe": planet.EspionageProbe,
+			"bomber":          planet.Bomber,
+			"destroyer":       planet.Destroyer,
+			"deathstar":       planet.Deathstar,
+			"battlecruiser":   planet.Battlecruiser,
+			"reaper":          planet.Reaper,
+			"pathfinder":      planet.Pathfinder,
+			"solar_satellite": planet.SolarSatellite,
+			"crawler":         planet.Crawler,
 		},
 	})
 }
@@ -2101,7 +2101,7 @@ func (h *Handlers) GetPlanetDefense(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"planet_id": planet.ID,
 		"defense": fiber.Map{
-			"rocket_launcher":      planet.RocketLauncher,
+			"rocket_launcher":     planet.RocketLauncher,
 			"light_laser":         planet.LightLaser,
 			"heavy_laser":         planet.HeavyLaser,
 			"ion_cannon":          planet.IonCannon,
@@ -2145,10 +2145,10 @@ func (h *Handlers) GetPlanetProduction(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"planet_id": planet.ID,
 		"production": fiber.Map{
-			"metal":      metalProd,
-			"crystal":    crystalProd,
-			"deuterium":  deuteriumProd,
-			"energy":     energyProd,
+			"metal":     metalProd,
+			"crystal":   crystalProd,
+			"deuterium": deuteriumProd,
+			"energy":    energyProd,
 		},
 		"consumption": fiber.Map{
 			"energy": planet.EnergyUsed,
@@ -2295,8 +2295,8 @@ func (h *Handlers) GetGalaxy(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"galaxy":   galaxy,
-		"system":   system,
+		"galaxy":    galaxy,
+		"system":    system,
 		"positions": positions,
 	})
 }
@@ -2921,8 +2921,8 @@ func (h *Handlers) GetJumpGateTargets(c *fiber.Ctx) error {
 }
 
 type JumpGateRequest struct {
-	TargetMoonID uint              `json:"target_moon_id"`
-	Ships        map[string]int    `json:"ships"`
+	TargetMoonID uint           `json:"target_moon_id"`
+	Ships        map[string]int `json:"ships"`
 }
 
 // ExecuteJumpGate uses the jump gate to transport fleets
@@ -3237,10 +3237,10 @@ func (h *Handlers) CollectDebris(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":     true,
-		"metal":       metal,
-		"crystal":     crystal,
-		"recycled":    metal + crystal,
+		"success":  true,
+		"metal":    metal,
+		"crystal":  crystal,
+		"recycled": metal + crystal,
 	})
 }
 
@@ -3336,11 +3336,11 @@ func (h *Handlers) CollectWreckField(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success":     true,
-		"metal":       metal,
-		"crystal":     crystal,
-		"deuterium":   deuterium,
-		"recycled":    metal + crystal + deuterium,
+		"success":   true,
+		"metal":     metal,
+		"crystal":   crystal,
+		"deuterium": deuterium,
+		"recycled":  metal + crystal + deuterium,
 	})
 }
 
@@ -3830,8 +3830,8 @@ func (h *Handlers) GetCharacterClass(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"character_class": classID,
-		"class_info":      currentClass,
+		"character_class":   classID,
+		"class_info":        currentClass,
 		"available_classes": classes,
 	})
 }
@@ -3876,13 +3876,13 @@ func (h *Handlers) SelectCharacterClass(c *fiber.Ctx) error {
 // @Router /buildings [get]
 func (h *Handlers) GetBuildings(c *fiber.Ctx) error {
 	type Building struct {
-		ID          int     `json:"id"`
-		Name        string  `json:"name"`
-		Metal       int     `json:"metal"`
-		Crystal     int     `json:"crystal"`
-		Deuterium   int     `json:"deuterium"`
-		CostFactor  float64 `json:"cost_factor"`
-		Category    string  `json:"category"`
+		ID         int     `json:"id"`
+		Name       string  `json:"name"`
+		Metal      int     `json:"metal"`
+		Crystal    int     `json:"crystal"`
+		Deuterium  int     `json:"deuterium"`
+		CostFactor float64 `json:"cost_factor"`
+		Category   string  `json:"category"`
 	}
 	buildings := []Building{
 		{1, "Metal Mine", 60, 0, 0, 1.5, "mine"},
@@ -3923,12 +3923,43 @@ func (h *Handlers) GetBuilding(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid building id"})
 	}
-	return c.JSON(fiber.Map{
-		"id": id,
-		"name": "Building",
-		"base_cost": fiber.Map{"metal": 60, "crystal": 0, "deuterium": 0},
-		"cost_factor": 1.5,
-	})
+	type Building struct {
+		ID         int     `json:"id"`
+		Name       string  `json:"name"`
+		Metal      int     `json:"metal"`
+		Crystal    int     `json:"crystal"`
+		Deuterium  int     `json:"deuterium"`
+		CostFactor float64 `json:"cost_factor"`
+		Category   string  `json:"category"`
+	}
+	buildings := map[int]Building{
+		1:  {1, "Metal Mine", 60, 0, 0, 1.5, "mine"},
+		2:  {2, "Crystal Mine", 48, 24, 0, 1.6, "mine"},
+		3:  {3, "Deuterium Synthesizer", 225, 0, 0, 1.5, "mine"},
+		4:  {4, "Solar Plant", 75, 0, 0, 1.5, "energy"},
+		5:  {5, "Fusion Reactor", 900, 360, 180, 1.8, "energy"},
+		6:  {6, "Metal Storage", 100, 0, 0, 2.0, "storage"},
+		7:  {7, "Crystal Storage", 100, 50, 0, 2.0, "storage"},
+		8:  {8, "Deuterium Storage", 100, 100, 0, 2.0, "storage"},
+		9:  {9, "Robot Factory", 400, 120, 0, 2.0, "facility"},
+		10: {10, "Shipyard", 400, 200, 0, 2.0, "facility"},
+		11: {11, "Research Lab", 200, 400, 0, 2.0, "facility"},
+		12: {12, "Nanite Factory", 1000000, 200000, 0, 2.0, "facility"},
+		13: {13, "Terraformer", 50000, 100000, 1000000, 2.0, "facility"},
+		14: {14, "Space Dock", 400, 200, 100, 2.0, "facility"},
+		15: {15, "Metal Silo", 100, 0, 0, 2.0, "storage"},
+		16: {16, "Crystal Silo", 100, 50, 0, 2.0, "storage"},
+		17: {17, "Deuterium Silo", 100, 100, 0, 2.0, "storage"},
+		18: {18, "Lunar Base", 20000, 40000, 20000, 2.0, "moon"},
+		19: {19, "Sensor Phalanx", 20000, 40000, 20000, 2.0, "moon"},
+		20: {20, "Jump Gate", 2000000, 4000000, 2000000, 2.0, "moon"},
+		21: {21, "Missile Silo", 20000, 20000, 1000, 2.0, "facility"},
+	}
+	building, ok := buildings[id]
+	if !ok {
+		return c.Status(404).JSON(fiber.Map{"error": "building not found"})
+	}
+	return c.JSON(building)
 }
 
 // GetShips returns all ships with full stats
@@ -3940,18 +3971,18 @@ func (h *Handlers) GetBuilding(c *fiber.Ctx) error {
 // @Router /ships [get]
 func (h *Handlers) GetShips(c *fiber.Ctx) error {
 	type Ship struct {
-		ID             int    `json:"id"`
-		Name           string `json:"name"`
-		Metal          int64  `json:"metal"`
-		Crystal        int64  `json:"crystal"`
-		Deuterium      int64  `json:"deuterium"`
-		BuildTime      int    `json:"build_time_seconds"`
-		CargoCapacity  int64  `json:"cargo_capacity"`
-		BaseSpeed      int64  `json:"base_speed"`
-		StructuralInt  int64  `json:"structural_integrity"`
-		Shield         int64  `json:"shield"`
-		Weapon         int64  `json:"weapon"`
-		Engine         string `json:"engine_type"`
+		ID            int    `json:"id"`
+		Name          string `json:"name"`
+		Metal         int64  `json:"metal"`
+		Crystal       int64  `json:"crystal"`
+		Deuterium     int64  `json:"deuterium"`
+		BuildTime     int    `json:"build_time_seconds"`
+		CargoCapacity int64  `json:"cargo_capacity"`
+		BaseSpeed     int64  `json:"base_speed"`
+		StructuralInt int64  `json:"structural_integrity"`
+		Shield        int64  `json:"shield"`
+		Weapon        int64  `json:"weapon"`
+		Engine        string `json:"engine_type"`
 	}
 	ships := []Ship{
 		{202, "Small Cargo", 2000, 2000, 0, 5, 5000, 5000, 2000, 10, 5, "combustion"},
@@ -3989,18 +4020,18 @@ func (h *Handlers) GetShip(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid ship id"})
 	}
 	type Ship struct {
-		ID             int    `json:"id"`
-		Name           string `json:"name"`
-		Metal          int64  `json:"metal"`
-		Crystal        int64  `json:"crystal"`
-		Deuterium      int64  `json:"deuterium"`
-		BuildTime      int    `json:"build_time_seconds"`
-		CargoCapacity  int64  `json:"cargo_capacity"`
-		BaseSpeed      int64  `json:"base_speed"`
-		StructuralInt  int64  `json:"structural_integrity"`
-		Shield         int64  `json:"shield"`
-		Weapon         int64  `json:"weapon"`
-		Engine         string `json:"engine_type"`
+		ID            int    `json:"id"`
+		Name          string `json:"name"`
+		Metal         int64  `json:"metal"`
+		Crystal       int64  `json:"crystal"`
+		Deuterium     int64  `json:"deuterium"`
+		BuildTime     int    `json:"build_time_seconds"`
+		CargoCapacity int64  `json:"cargo_capacity"`
+		BaseSpeed     int64  `json:"base_speed"`
+		StructuralInt int64  `json:"structural_integrity"`
+		Shield        int64  `json:"shield"`
+		Weapon        int64  `json:"weapon"`
+		Engine        string `json:"engine_type"`
 	}
 	ships := map[int]Ship{
 		202: {202, "Small Cargo", 2000, 2000, 0, 5, 5000, 5000, 2000, 10, 5, "combustion"},
@@ -4037,15 +4068,15 @@ func (h *Handlers) GetShip(c *fiber.Ctx) error {
 // @Router /defense [get]
 func (h *Handlers) GetDefense(c *fiber.Ctx) error {
 	type Defense struct {
-		ID                int    `json:"id"`
-		Name              string `json:"name"`
-		Metal             int64  `json:"metal"`
-		Crystal           int64  `json:"crystal"`
-		Deuterium         int64  `json:"deuterium"`
-		BuildTime         int    `json:"build_time_seconds"`
-		StructuralInt     int64  `json:"structural_integrity"`
-		Shield            int64  `json:"shield"`
-		Weapon            int64  `json:"weapon"`
+		ID            int    `json:"id"`
+		Name          string `json:"name"`
+		Metal         int64  `json:"metal"`
+		Crystal       int64  `json:"crystal"`
+		Deuterium     int64  `json:"deuterium"`
+		BuildTime     int    `json:"build_time_seconds"`
+		StructuralInt int64  `json:"structural_integrity"`
+		Shield        int64  `json:"shield"`
+		Weapon        int64  `json:"weapon"`
 	}
 	defense := []Defense{
 		{401, "Rocket Launcher", 2000, 0, 0, 10, 2000, 20, 80},
@@ -4076,15 +4107,15 @@ func (h *Handlers) GetDefenseUnit(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid defense id"})
 	}
 	type Defense struct {
-		ID                int    `json:"id"`
-		Name              string `json:"name"`
-		Metal             int64  `json:"metal"`
-		Crystal           int64  `json:"crystal"`
-		Deuterium         int64  `json:"deuterium"`
-		BuildTime         int    `json:"build_time_seconds"`
-		StructuralInt     int64  `json:"structural_integrity"`
-		Shield            int64  `json:"shield"`
-		Weapon            int64  `json:"weapon"`
+		ID            int    `json:"id"`
+		Name          string `json:"name"`
+		Metal         int64  `json:"metal"`
+		Crystal       int64  `json:"crystal"`
+		Deuterium     int64  `json:"deuterium"`
+		BuildTime     int    `json:"build_time_seconds"`
+		StructuralInt int64  `json:"structural_integrity"`
+		Shield        int64  `json:"shield"`
+		Weapon        int64  `json:"weapon"`
 	}
 	defense := map[int]Defense{
 		401: {401, "Rocket Launcher", 2000, 0, 0, 10, 2000, 20, 80},
@@ -4114,11 +4145,11 @@ func (h *Handlers) GetDefenseUnit(c *fiber.Ctx) error {
 // @Router /research [get]
 func (h *Handlers) GetResearch(c *fiber.Ctx) error {
 	type Research struct {
-		ID          int    `json:"id"`
-		Name        string `json:"name"`
-		Metal       int64  `json:"metal"`
-		Crystal     int64  `json:"crystal"`
-		Deuterium   int64  `json:"deuterium"`
+		ID        int    `json:"id"`
+		Name      string `json:"name"`
+		Metal     int64  `json:"metal"`
+		Crystal   int64  `json:"crystal"`
+		Deuterium int64  `json:"deuterium"`
 	}
 	research := []Research{
 		{113, "Energy Technology", 0, 800, 400},
@@ -4154,11 +4185,11 @@ func (h *Handlers) GetResearchType(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid research id"})
 	}
 	type Research struct {
-		ID          int    `json:"id"`
-		Name        string `json:"name"`
-		Metal       int64  `json:"metal"`
-		Crystal     int64  `json:"crystal"`
-		Deuterium   int64  `json:"deuterium"`
+		ID        int    `json:"id"`
+		Name      string `json:"name"`
+		Metal     int64  `json:"metal"`
+		Crystal   int64  `json:"crystal"`
+		Deuterium int64  `json:"deuterium"`
 	}
 	research := map[int]Research{
 		113: {113, "Energy Technology", 0, 800, 400},
